@@ -21,6 +21,8 @@ scan_code_t parse_text(scan_text_ctx_t *ctx, struct vfile *f, document_t *doc) {
 
     APPEND_META(doc, meta)
 
+    printf("%s", meta->str_val);
+
     free(buf);
     text_buffer_destroy(&tex);
 

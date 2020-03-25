@@ -6,3 +6,4 @@ libscan.so
 *.cbp
 CMakeFiles
 CMakeCache.txt
+scan_test

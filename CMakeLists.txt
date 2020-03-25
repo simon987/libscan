@@ -1,33 +1,45 @@
 cmake_minimum_required(VERSION 3.15)
-project(scan C)
 
+project(scan C)
 set(CMAKE_C_STANDARD 11)
 
+find_package(LibArchive REQUIRED)
 
 add_library(
         scan
-        src/text.c src/text.h
-        src/util.c src/util.h
-        src/types.h
-        src/macros.h
+        libscan/util.c libscan/util.h
+        libscan/scan.c libscan/scan.h
+        libscan/macros.h
+
+        libscan/text/text.c libscan/text/text.h
+        libscan/arc/arc.c libscan/arc/arc.h
 
         third-party/utf8.h
 )
 
-
-# Third party
-add_subdirectory(third-party/uuid/)
-target_include_directories(
-        scan PRIVATE
-        third-party/uuid/src/
-)
-
 target_compile_options(
-        scan PRIVATE
+        scan
+        PRIVATE
         -Werror
+        -g
 )
 
 target_link_libraries(
         scan
-        uuid
+        -static
+        ${LibArchive_LIBRARIES}
 )
+
+
+# test executable
+add_executable(
+        scan_test
+        test/main.c
+)
+
+
+target_link_libraries(
+        scan_test
+        scan
+)
+

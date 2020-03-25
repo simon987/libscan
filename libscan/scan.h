@@ -1,17 +1,10 @@
-#ifndef SCAN_TYPES_H
-#define SCAN_TYPES_H
+#ifndef SCAN_SCAN_H
+#define SCAN_SCAN_H
 
 #include <stdio.h>
 #include <sys/stat.h>
-#include "uuid.h"
+#include "../third-party/uuid/src/uuid.h"
 
-
-// TODO
-#define ARC_MODE_SKIP 0
-#define ARC_MODE_LIST 1
-#define ARC_MODE_SHALLOW 2
-#define ARC_MODE_RECURSE 3
-typedef int archive_mode_t;
 
 #define META_INT_MASK 0x80
 #define META_STR_MASK 0x40
@@ -121,4 +114,11 @@ typedef struct parse_job_t {
         doc->meta_tail = meta;\
     }
 
+
 #endif
+
+void fs_close(struct vfile *f);
+
+#define CLOSE_FILE(f) if (f.close != NULL) {f.close(&f);};
+
+int fs_read(struct vfile *f, void *buf, size_t size);

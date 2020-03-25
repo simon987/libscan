@@ -1,8 +1,8 @@
 #ifndef SCAN_TEXT_H
 #define SCAN_TEXT_H
 
-#include "types.h"
-#include "util.h"
+#include "../scan.h"
+#include "../util.h"
 
 typedef struct {
     long content_size;
