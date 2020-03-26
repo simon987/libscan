@@ -1,5 +1,5 @@
-#ifndef SCAN_PDF_H
-#define SCAN_PDF_H
+#ifndef SCAN_EBOOK_H
+#define SCAN_EBOOK_H
 
 #include "../scan.h"
 

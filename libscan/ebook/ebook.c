@@ -159,7 +159,7 @@ void fill_image(fz_context *fzctx, UNUSED(fz_device *dev),
             if (len >= MIN_OCR_LEN) {
                 text_buffer_append_string(&thread_buffer, text, len - 1);
 //                LOG_DEBUGF(
-//                        "pdf.c",
+//                        "ebook.c",
 //                        "(OCR) %dx%d got %dB from tesseract (%s), buffer:%dB",
 //                        pix->w, pix->h, len, ScanCtx.tesseract_lang, thread_buffer.dyn_buffer.cur
 //                )

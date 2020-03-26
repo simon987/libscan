@@ -40,6 +40,7 @@ add_library(
         libscan/text/text.c libscan/text/text.h
         libscan/arc/arc.c libscan/arc/arc.h
         libscan/ebook/ebook.c libscan/ebook/ebook.h
+        libscan/cbr/cbr.c libscan/cbr/cbr.h
 
         third-party/utf8.h
 )
