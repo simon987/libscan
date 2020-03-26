@@ -10,6 +10,8 @@
 #define META_STR_MASK 0x40
 #define META_LONG_MASK 0x20
 
+#define UNUSED(x) __attribute__((__unused__))  x
+
 #define META_STR(id) ((unsigned) id) | ((unsigned) META_STR_MASK)
 #define META_INT(id) ((unsigned) id) | ((unsigned) META_INT_MASK)
 #define META_LONG(id) ((unsigned) id) | ((unsigned) META_LONG_MASK)
@@ -89,6 +91,7 @@ typedef struct vfile {
 
     int is_fs_file;
     char *filepath;
+    struct stat info;
 
     read_func_t read;
     close_func_t close;

@@ -1,9 +1,9 @@
 #ifndef SIST2_UTIL_H
 #define SIST2_UTIL_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
 #include "../third-party/utf8.h/utf8.h"
 #include "macros.h"
 
@@ -26,7 +26,6 @@ typedef struct text_buffer {
     dyn_buffer_t dyn_buffer;
 } text_buffer_t;
 
-__always_inline
 static int utf8_validchr2(const char *s) {
     if (0x00 == (0x80 & *s)) {
         return TRUE;
@@ -75,7 +74,6 @@ static int utf8_validchr2(const char *s) {
 }
 
 
-__always_inline
 static dyn_buffer_t dyn_buffer_create() {
     dyn_buffer_t buf;
 
@@ -86,7 +84,6 @@ static dyn_buffer_t dyn_buffer_create() {
     return buf;
 }
 
-__always_inline
 static void grow_buffer(dyn_buffer_t *buf, size_t size) {
     if (buf->cur + size > buf->size) {
         do {
@@ -97,7 +94,6 @@ static void grow_buffer(dyn_buffer_t *buf, size_t size) {
     }
 }
 
-__always_inline
 static void grow_buffer_small(dyn_buffer_t *buf) {
     if (buf->cur + sizeof(long) > buf->size) {
         buf->size *= 2;
@@ -105,7 +101,6 @@ static void grow_buffer_small(dyn_buffer_t *buf) {
     }
 }
 
-__always_inline
 static void dyn_buffer_write(dyn_buffer_t *buf, const void *data, size_t size) {
     grow_buffer(buf, size);
 
@@ -113,7 +108,6 @@ static void dyn_buffer_write(dyn_buffer_t *buf, const void *data, size_t size) {
     buf->cur += size;
 }
 
-__always_inline
 static void dyn_buffer_write_char(dyn_buffer_t *buf, char c) {
     grow_buffer_small(buf);
 
@@ -121,18 +115,15 @@ static void dyn_buffer_write_char(dyn_buffer_t *buf, char c) {
     buf->cur += sizeof(c);
 }
 
-__always_inline
 static void dyn_buffer_write_str(dyn_buffer_t *buf, char *str) {
     dyn_buffer_write(buf, str, strlen(str));
     dyn_buffer_write_char(buf, '\0');
 }
 
-__always_inline
 static void dyn_buffer_append_string(dyn_buffer_t *buf, char *str) {
     dyn_buffer_write(buf, str, strlen(str));
 }
 
-__always_inline
 static void dyn_buffer_write_int(dyn_buffer_t *buf, int d) {
     grow_buffer_small(buf);
 
@@ -140,7 +131,6 @@ static void dyn_buffer_write_int(dyn_buffer_t *buf, int d) {
     buf->cur += sizeof(int);
 }
 
-__always_inline
 static void dyn_buffer_write_short(dyn_buffer_t *buf, short s) {
     grow_buffer_small(buf);
 
@@ -148,7 +138,6 @@ static void dyn_buffer_write_short(dyn_buffer_t *buf, short s) {
     buf->cur += sizeof(short);
 }
 
-__always_inline
 static void dyn_buffer_write_long(dyn_buffer_t *buf, unsigned long l) {
     grow_buffer_small(buf);
 
@@ -156,17 +145,14 @@ static void dyn_buffer_write_long(dyn_buffer_t *buf, unsigned long l) {
     buf->cur += sizeof(unsigned long);
 }
 
-__always_inline
 static void dyn_buffer_destroy(dyn_buffer_t *buf) {
     free(buf->buf);
 }
 
-__always_inline
 static void text_buffer_destroy(text_buffer_t *buf) {
     dyn_buffer_destroy(&buf->dyn_buffer);
 }
 
-__always_inline
 static text_buffer_t text_buffer_create(long max_size) {
     text_buffer_t text_buf;
 
@@ -177,7 +163,6 @@ static text_buffer_t text_buffer_create(long max_size) {
     return text_buf;
 }
 
-__always_inline
 static int text_buffer_append_char(text_buffer_t *buf, int c) {
 
     if (SHOULD_IGNORE_CHAR(c) || c == ' ') {
@@ -218,7 +203,6 @@ static int text_buffer_append_char(text_buffer_t *buf, int c) {
 }
 
 
-__always_inline
 static void text_buffer_terminate_string(text_buffer_t *buf) {
     if (buf->dyn_buffer.cur > 0 && *(buf->dyn_buffer.buf + buf->dyn_buffer.cur - 1) == ' ') {
         *(buf->dyn_buffer.buf + buf->dyn_buffer.cur - 1) = '\0';
@@ -233,7 +217,6 @@ static void text_buffer_terminate_string(text_buffer_t *buf) {
     (0xe0 == (0xf0 & *ptr) && ptr - str > len - 3) || \
     (0xf0 == (0xf8 & *ptr) && ptr - str > len - 4))
 
-__always_inline
 static int text_buffer_append_string(text_buffer_t *buf, const char *str, size_t len) {
 
     const char *ptr = str;
@@ -275,9 +258,17 @@ static int text_buffer_append_string(text_buffer_t *buf, const char *str, size_t
     return 0;
 }
 
-__always_inline
 static int text_buffer_append_string0(text_buffer_t *buf, char *str) {
     return text_buffer_append_string(buf, str, strlen(str));
+}
+
+static void* read_all(vfile_t *f, size_t *size) {
+    void* buf = malloc(f->info.st_size);
+    *size = f->read(f, buf, f->info.st_size);
+
+    //TODO: log
+
+    return buf;
 }
 
 #endif

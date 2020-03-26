@@ -1,10 +1,11 @@
 #include "../libscan/text/text.h"
 #include <fcntl.h>
 #include "../libscan/arc/arc.h"
+#include "../libscan/ebook/ebook.h"
 
 int main() {
 
-    scan_text_ctx_t ctx;
+    scan_ebook_ctx_t ctx;
 
     ctx.content_size = 100;
     vfile_t file;
@@ -18,5 +19,5 @@ int main() {
     doc.meta_tail = NULL;
 
     doc.size = 200;
-    parse_text(&ctx, &file, &doc);
+    parse_ebook(&ctx,  &file,"application/pdf", &doc);
 }

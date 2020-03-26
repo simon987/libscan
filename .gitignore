@@ -7,3 +7,4 @@ libscan.so
 CMakeFiles
 CMakeCache.txt
 scan_test
+third-party/

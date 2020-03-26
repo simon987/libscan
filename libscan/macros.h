@@ -1,5 +1,6 @@
 #ifndef	FALSE
 #define	FALSE	(0)
+#define BOOL int
 #endif
 
 #ifndef	TRUE
