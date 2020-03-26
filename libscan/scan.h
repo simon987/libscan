@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include "../third-party/uuid/src/uuid.h"
 
+#include "macros.h"
+
 
 #define META_INT_MASK 0x80
 #define META_STR_MASK 0x40

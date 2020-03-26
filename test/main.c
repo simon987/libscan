@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include "../libscan/arc/arc.h"
 #include "../libscan/ebook/ebook.h"
+#include "../libscan/ooxml/ooxml.h"
 
 int main() {
 

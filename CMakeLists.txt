@@ -9,6 +9,7 @@ find_package(Tesseract CONFIG REQUIRED)
 find_package(harfbuzz CONFIG REQUIRED)
 find_package(OpenJPEG CONFIG REQUIRED)
 find_package(JPEG REQUIRED)
+find_package(LibXml2 REQUIRED)
 
 
 include(ExternalProject)
@@ -41,6 +42,7 @@ add_library(
         libscan/arc/arc.c libscan/arc/arc.h
         libscan/ebook/ebook.c libscan/ebook/ebook.h
         libscan/cbr/cbr.c libscan/cbr/cbr.h
+        libscan/ooxml/ooxml.c libscan/ooxml/ooxml.h
 
         third-party/utf8.h
 )
@@ -76,6 +78,7 @@ target_link_libraries(
         ${JPEG_LIBRARIES}
         ${LibArchive_LIBRARIES}
         ${Tesseract_LIBRARIES}
+        ${LIBXML2_LIBRARIES}
 
         ${CMAKE_THREAD_LIBS_INIT}
 
@@ -88,6 +91,7 @@ target_include_directories(
         PRIVATE
         "${CMAKE_SOURCE_DIR}/third-party/ext_mupdf/src/mupdf/include/"
         ${JPEG_INCLUDE_DIR}
+        ${LIBXML2_INCLUDE_DIR}
 )
 
 
