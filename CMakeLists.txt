@@ -10,6 +10,7 @@ find_package(harfbuzz CONFIG REQUIRED)
 find_package(OpenJPEG CONFIG REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(LibXml2 REQUIRED)
+find_package(FFMPEG REQUIRED)
 
 
 include(ExternalProject)
@@ -43,6 +44,7 @@ add_library(
         libscan/ebook/ebook.c libscan/ebook/ebook.h
         libscan/cbr/cbr.c libscan/cbr/cbr.h
         libscan/ooxml/ooxml.c libscan/ooxml/ooxml.h
+        libscan/media/media.c libscan/media/media.h
 
         third-party/utf8.h
 )
@@ -60,6 +62,9 @@ add_dependencies(
 )
 
 SET(CMAKE_C_LINK_EXECUTABLE "g++ <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+
+string(REGEX REPLACE "-lvdpau" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
+string(REGEX REPLACE "-lX11" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
 
 target_link_libraries(
         scan
@@ -79,6 +84,7 @@ target_link_libraries(
         ${LibArchive_LIBRARIES}
         ${Tesseract_LIBRARIES}
         ${LIBXML2_LIBRARIES}
+        ${FFMPEG_LIBRARIES}
 
         ${CMAKE_THREAD_LIBS_INIT}
 
@@ -92,6 +98,7 @@ target_include_directories(
         "${CMAKE_SOURCE_DIR}/third-party/ext_mupdf/src/mupdf/include/"
         ${JPEG_INCLUDE_DIR}
         ${LIBXML2_INCLUDE_DIR}
+        ${FFMPEG_INCLUDE_DIR}
 )
 
 
