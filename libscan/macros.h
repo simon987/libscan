@@ -16,3 +16,6 @@
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
+
+#undef ABS
+#define ABS(a)	   (((a) < 0) ? -(a) : (a))

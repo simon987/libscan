@@ -45,6 +45,7 @@ add_library(
         libscan/cbr/cbr.c libscan/cbr/cbr.h
         libscan/ooxml/ooxml.c libscan/ooxml/ooxml.h
         libscan/media/media.c libscan/media/media.h
+        libscan/font/font.c libscan/font/font.h
 
         third-party/utf8.h
 )

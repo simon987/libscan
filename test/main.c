@@ -3,6 +3,10 @@
 #include "../libscan/arc/arc.h"
 #include "../libscan/ebook/ebook.h"
 #include "../libscan/ooxml/ooxml.h"
+#include "../libscan/font/font.h"
+
+#include <ft2build.h>
+#include <freetype/freetype.h>
 
 int main() {
 
