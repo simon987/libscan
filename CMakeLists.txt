@@ -36,7 +36,7 @@ ExternalProject_Add(
 add_library(
         scan
         libscan/util.c libscan/util.h
-        libscan/scan.c libscan/scan.h
+        libscan/scan.h
         libscan/macros.h
 
         libscan/text/text.c libscan/text/text.h
@@ -101,16 +101,3 @@ target_include_directories(
         ${LIBXML2_INCLUDE_DIR}
         ${FFMPEG_INCLUDE_DIR}
 )
-
-
-# test executable
-add_executable(
-        scan_test
-        test/main.c
-)
-
-target_link_libraries(
-        scan_test
-        scan
-)
-

@@ -1,5 +1,5 @@
-#ifndef SIST2_UTIL_H
-#define SIST2_UTIL_H
+#ifndef SCAN_UTIL_H
+#define SCAN_UTIL_H
 
 #include "stdio.h"
 #include "stdlib.h"

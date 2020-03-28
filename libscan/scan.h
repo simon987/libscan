@@ -7,6 +7,11 @@
 
 #include "macros.h"
 
+// TODO: global init:
+/*
+ * av_log_set_level(AV_LOG_QUIET);
+ */
+
 
 #define META_INT_MASK 0x80
 #define META_STR_MASK 0x40
@@ -33,8 +38,8 @@ enum metakey {
     MetaWidth = META_INT(2),
     MetaHeight = META_INT(3),
     MetaMediaDuration = META_LONG(4),
-    MetaMediaAudioCodec = META_INT(5),
-    MetaMediaVideoCodec = META_INT(6),
+    MetaMediaAudioCodec = META_STR(5),
+    MetaMediaVideoCodec = META_STR(6),
     MetaMediaBitrate = META_LONG(7),
     MetaArtist = META_STR(8),
     MetaAlbum = META_STR(9),
@@ -118,12 +123,12 @@ typedef struct parse_job_t {
         doc->meta_tail->next = meta;\
         doc->meta_tail = meta;\
     }
-
-
 #endif
 
-void fs_close(struct vfile *f);
-
-#define CLOSE_FILE(f) if (f.close != NULL) {f.close(&f);};
-
-int fs_read(struct vfile *f, void *buf, size_t size);
+#include "arc/arc.h"
+#include "cbr/cbr.h"
+#include "ebook/ebook.h"
+#include "font/font.h"
+#include "media/media.h"
+#include "ooxml/ooxml.h"
+#include "text/text.h"

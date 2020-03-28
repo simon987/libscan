@@ -240,10 +240,14 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
         if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             if (audio_stream == -1) {
-                meta_line_t *meta_audio = malloc(sizeof(meta_line_t));
-                meta_audio->key = MetaMediaAudioCodec;
-                meta_audio->int_val = stream->codecpar->codec_id;
-                APPEND_META(doc, meta_audio)
+                const AVCodecDescriptor *desc = avcodec_descriptor_get(stream->codecpar->codec_id);
+
+                if (desc != NULL) {
+                    meta_line_t *meta_audio = malloc(sizeof(meta_line_t));
+                    meta_audio->key = MetaMediaAudioCodec;
+                    strcpy(meta_audio->str_val, desc->name);
+                    APPEND_META(doc, meta_audio)
+                }
 
                 append_audio_meta(pFormatCtx, doc);
                 audio_stream = i;
@@ -251,10 +255,18 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
         } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
 
             if (video_stream == -1) {
-                meta_line_t *meta_vid = malloc(sizeof(meta_line_t));
-                meta_vid->key = MetaMediaVideoCodec;
-                meta_vid->int_val = stream->codecpar->codec_id;
-                APPEND_META(doc, meta_vid)
+                const AVCodecDescriptor *desc = avcodec_descriptor_get(stream->codecpar->codec_id);
+
+                if (desc != NULL) {
+                    meta_line_t *meta_vid = malloc(sizeof(meta_line_t));
+                    meta_vid->key = MetaMediaVideoCodec;
+                    strcpy(meta_vid->str_val, desc->name);
+                    APPEND_META(doc, meta_vid)
+                }
+
+                meta_line_t *meta_audio = malloc(sizeof(meta_line_t));
+                meta_audio->key = MetaMediaAudioCodec;
+                APPEND_META(doc, meta_audio)
 
                 meta_line_t *meta_w = malloc(sizeof(meta_line_t));
                 meta_w->key = MetaWidth;
