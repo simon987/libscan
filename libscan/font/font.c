@@ -149,7 +149,7 @@ void parse_font(scan_font_cxt_t *ctx, vfile_t *f, document_t *doc) {
     FT_Face face;
     FT_Error err = FT_New_Memory_Face(ft_lib, (unsigned char *) buf, buf_len, 0, &face);
     if (err != 0) {
-//        LOG_ERRORF(doc->filepath, "(font.c) FT_New_Memory_Face() returned error code [%d] %s", err, ft_error_string(err));
+        CTX_LOG_ERRORF(doc->filepath, "(font.c) FT_New_Memory_Face() returned error code [%d] %s", err, FT_Error_String(err))
         return;
     }
 
@@ -180,7 +180,7 @@ void parse_font(scan_font_cxt_t *ctx, vfile_t *f, document_t *doc) {
 
     err = FT_Set_Pixel_Sizes(face, 0, pixel);
     if (err != 0) {
-//        LOG_WARNINGF(doc->filepath, "(font.c) FT_Set_Pixel_Sizes() returned error code [%d] %s", err, ft_error_string(err))
+        CTX_LOG_WARNINGF(doc->filepath, "(font.c) FT_Set_Pixel_Sizes() returned error code [%d] %s", err, FT_Error_String(err))
         FT_Done_Face(face);
         return;
     }
@@ -200,7 +200,7 @@ void parse_font(scan_font_cxt_t *ctx, vfile_t *f, document_t *doc) {
             c = c >= 'a' && c <= 'z' ? c - 32 : c + 32;
             err = FT_Load_Char(face, c, FT_LOAD_NO_HINTING | FT_LOAD_RENDER);
             if (err != 0) {
-//                LOG_WARNINGF(doc->filepath, "(font.c) FT_Load_Char() returned error code [%d] %s", err, ft_error_string(err));
+                CTX_LOG_WARNINGF(doc->filepath, "(font.c) FT_Load_Char() returned error code [%d] %s", err, FT_Error_String(err))
                 continue;
             }
         }
@@ -221,7 +221,7 @@ void parse_font(scan_font_cxt_t *ctx, vfile_t *f, document_t *doc) {
     dyn_buffer_t bmp_data = dyn_buffer_create();
     bmp_format(&bmp_data, dimensions, bitmap);
 
-//    store_write(ScanCtx.index.store, (char *) doc->uuid, sizeof(doc->uuid), (char *) bmp_data.buf, bmp_data.cur);
+    ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) bmp_data.buf, bmp_data.cur);
 
     dyn_buffer_destroy(&bmp_data);
     free(bitmap);

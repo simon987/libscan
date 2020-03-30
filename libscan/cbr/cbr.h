@@ -5,7 +5,9 @@
 #include "../scan.h"
 
 typedef struct {
-
+    log_callback_t log;
+    logf_callback_t logf;
+    store_callback_t store;
 } scan_cbr_ctx_t;
 
 void cbr_init();

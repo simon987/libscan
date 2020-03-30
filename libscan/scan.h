@@ -32,6 +32,31 @@ typedef int scan_code_t;
 #define SCAN_OK (scan_code_t) 0
 #define SCAN_ERR_READ (scan_code_t) -1
 
+#define LEVEL_DEBUG 0
+#define LEVEL_INFO 1
+#define LEVEL_WARNING 2
+#define LEVEL_ERROR 3
+#define LEVEL_FATAL 4
+
+#define CTX_LOG_DEBUGF(filepath, fmt, ...) ctx->logf(filepath, LEVEL_DEBUG, fmt, __VA_ARGS__);
+#define CTX_LOG_DEBUG(filepath, str) ctx->log(filepath, LEVEL_DEBUG, str);
+
+#define CTX_LOG_INFOF(filepath, fmt, ...) ctx->logf(filepath, LEVEL_INFO, fmt, __VA_ARGS__);
+#define CTX_LOG_INFO(filepath, str) ctx->log(filepath, LEVEL_INFO, str);
+
+#define CTX_LOG_WARNINGF(filepath, fmt, ...) ctx->logf(filepath, LEVEL_WARNING, fmt, __VA_ARGS__);
+#define CTX_LOG_WARNING(filepath, str) ctx->log(filepath, LEVEL_WARNING, str);
+
+#define CTX_LOG_ERRORF(filepath, fmt, ...) ctx->logf(filepath, LEVEL_ERROR, fmt, __VA_ARGS__);
+#define CTX_LOG_ERROR(filepath, str) ctx->log(filepath, LEVEL_ERROR, str);
+
+#define CTX_LOG_FATALF(filepath, fmt, ...) ctx->logf(filepath, LEVEL_FATAL, fmt, __VA_ARGS__); exit(-1);
+#define CTX_LOG_FATAL(filepath, str) ctx->log(filepath, LEVEL_FATAL, str); exit(-1);
+
+typedef void (*store_callback_t)(char *key, size_t key_len, char *buf, size_t buf_len);
+typedef void (*logf_callback_t)(char *filepath, int level, char *format, ...);
+typedef void (*log_callback_t)(char *filepath, int level, char *str);
+
 // This is written to file as a 16-bit int!
 enum metakey {
     MetaContent = META_STR(1),

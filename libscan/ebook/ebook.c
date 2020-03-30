@@ -26,7 +26,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
 
     if (err != 0) {
         fz_drop_page(fzctx, cover);
-//        LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, ctx->error.message)
+        CTX_LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, fzctx->error.message)
         return FALSE;
     }
 
@@ -65,7 +65,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
         err = fzctx->error.errcode;
 
     if (err != 0) {
-//        LOG_WARNINGF(doc->filepath, "fz_run_page() returned error code [%d] %s", err, ctx->error.message)
+        CTX_LOG_WARNINGF(doc->filepath, "fz_run_page() returned error code [%d] %s", err, fzctx->error.message)
         fz_drop_page(fzctx, cover);
         fz_drop_pixmap(fzctx, pixmap);
         return FALSE;
@@ -83,7 +83,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     if (err == 0) {
         unsigned char *tn_buf;
         size_t tn_len = fz_buffer_storage(fzctx, fzbuf, &tn_buf);
-//        store_write(ScanCtx.index.store, (char *) doc->uuid, sizeof(doc->uuid), (char *) tn_buf, tn_len);
+        ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) tn_buf, tn_len);
     }
 
     fz_drop_buffer(fzctx, fzbuf);
@@ -91,19 +91,17 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     fz_drop_page(fzctx, cover);
 
     if (err != 0) {
-//        LOG_WARNINGF(doc->filepath, "fz_new_buffer_from_pixmap_as_png() returned error code [%d] %s", err,
-//                     ctx->error.message)
+        CTX_LOG_WARNINGF(doc->filepath, "fz_new_buffer_from_pixmap_as_png() returned error code [%d] %s", err,
+                     fzctx->error.message)
         return FALSE;
     }
 
     return TRUE;
 }
 
-void fz_err_callback(void *user, UNUSED(const char *message)) {
-//    if (LogCtx.verbose) {
-//        document_t *doc = (document_t *) user;
-//        LOG_WARNINGF(doc->filepath, "FZ: %s", message)
-//    }
+void fz_err_callback(void *user, const char *message) {
+    document_t *doc = (document_t *) user;
+    thread_ctx.logf(doc->filepath, LEVEL_WARNING,"FZ: %s", message);
 }
 
 static void init_fzctx(fz_context *fzctx, document_t *doc) {
@@ -158,11 +156,6 @@ void fill_image(fz_context *fzctx, UNUSED(fz_device *dev),
             size_t len = strlen(text);
             if (len >= MIN_OCR_LEN) {
                 text_buffer_append_string(&thread_buffer, text, len - 1);
-//                LOG_DEBUGF(
-//                        "ebook.c",
-//                        "(OCR) %dx%d got %dB from tesseract (%s), buffer:%dB",
-//                        pix->w, pix->h, len, ScanCtx.tesseract_lang, thread_buffer.dyn_buffer.cur
-//                )
             }
 
             TessBaseAPIEnd(api);
@@ -230,7 +223,7 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
         err = fzctx->error.errcode;
 
     if (err) {
-//        LOG_WARNINGF(doc->filepath, "fz_count_pages() returned error code [%d] %s", err, ctx->error.message)
+        CTX_LOG_WARNINGF(doc->filepath, "fz_count_pages() returned error code [%d] %s", err, fzctx->error.message)
         fz_drop_stream(fzctx, stream);
         fz_drop_document(fzctx, fzdoc);
         fz_drop_context(fzctx);
@@ -260,7 +253,7 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
             fz_catch(fzctx)
                 err = fzctx->error.errcode;
             if (err != 0) {
-//                LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, ctx->error.message)
+                CTX_LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, fzctx->error.message)
                 text_buffer_destroy(&thread_buffer);
                 fz_drop_page(fzctx, page);
                 fz_drop_stream(fzctx, stream);
@@ -293,7 +286,7 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
                 err = fzctx->error.errcode;
 
             if (err != 0) {
-//                LOG_WARNINGF(doc->filepath, "fz_run_page() returned error code [%d] %s", err, ctx->error.message)
+                CTX_LOG_WARNINGF(doc->filepath, "fz_run_page() returned error code [%d] %s", err, fzctx->error.message)
                 text_buffer_destroy(&thread_buffer);
                 fz_drop_page(fzctx, page);
                 fz_drop_stext_page(fzctx, stext);

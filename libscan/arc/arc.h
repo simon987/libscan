@@ -13,6 +13,10 @@ typedef int archive_mode_t;
 
 typedef struct {
     archive_mode_t mode;
+
+    log_callback_t log;
+    logf_callback_t logf;
+    store_callback_t store;
 } scan_arc_ctx_t;
 
 #define ARC_BUF_SIZE 8192

@@ -9,8 +9,6 @@
 __always_inline
 static int should_read_part(const char *part) {
 
-//    LOG_DEBUGF("ooxml.c", "Got part : %s", part)
-
     if (part == NULL) {
         return FALSE;
     }
@@ -35,15 +33,15 @@ static int should_read_part(const char *part) {
     return FALSE;
 }
 
-int extract_text(xmlDoc *xml, xmlNode *node, text_buffer_t *buf) {
+int extract_text(scan_ooxml_cxt_t *ctx, xmlDoc *xml, xmlNode *node, text_buffer_t *buf) {
     //TODO: Check which nodes are likely to have a 't' child, and ignore nodes that aren't
     xmlErrorPtr err = xmlGetLastError();
     if (err != NULL) {
         if (err->level == XML_ERR_FATAL) {
-//            LOG_ERRORF("ooxml.c", "Got fatal XML error while parsing document: %s", err->message)
+            CTX_LOG_ERRORF("ooxml.c", "Got fatal XML error while parsing document: %s", err->message)
             return -1;
         } else {
-//            LOG_ERRORF("ooxml.c", "Got recoverable XML error while parsing document: %s", err->message)
+            CTX_LOG_ERRORF("ooxml.c", "Got recoverable XML error while parsing document: %s", err->message)
         }
     }
 
@@ -58,7 +56,7 @@ int extract_text(xmlDoc *xml, xmlNode *node, text_buffer_t *buf) {
             }
         }
 
-        extract_text(xml, child->children, buf);
+        extract_text(ctx, xml, child->children, buf);
     }
     return 0;
 }
@@ -74,23 +72,23 @@ int xml_io_close(UNUSED(void *context)) {
 }
 
 __always_inline
-static int read_part(struct archive *a, text_buffer_t *buf, document_t *doc) {
+static int read_part(scan_ooxml_cxt_t *ctx, struct archive *a, text_buffer_t *buf, document_t *doc) {
 
     xmlDoc *xml = xmlReadIO(xml_io_read, xml_io_close, a, "/", NULL, XML_PARSE_RECOVER | XML_PARSE_NOWARNING | XML_PARSE_NOERROR | XML_PARSE_NONET);
 
     if (xml == NULL) {
-//        LOG_ERROR(doc->filepath, "Could not parse XML")
+        CTX_LOG_ERROR(doc->filepath, "Could not parse XML")
         return -1;
     }
 
     xmlNode *root = xmlDocGetRootElement(xml);
     if (root == NULL) {
-//        LOG_ERROR(doc->filepath, "Empty document")
+        CTX_LOG_ERROR(doc->filepath, "Empty document")
         xmlFreeDoc(xml);
         return -1;
     }
 
-    extract_text(xml, root, buf);
+    extract_text(ctx, xml, root, buf);
     xmlFreeDoc(xml);
 
     return 0;
@@ -106,7 +104,7 @@ void parse_doc(scan_ooxml_cxt_t *ctx, vfile_t *f, document_t *doc) {
 
     int ret = archive_read_open_memory(a, buf, buf_len);
     if (ret != ARCHIVE_OK) {
-//        LOG_ERRORF(doc->filepath, "Could not read archive: %s", archive_error_string(a))
+        CTX_LOG_ERRORF(doc->filepath, "Could not read archive: %s", archive_error_string(a))
         archive_read_free(a);
         return;
     }
@@ -119,7 +117,7 @@ void parse_doc(scan_ooxml_cxt_t *ctx, vfile_t *f, document_t *doc) {
             const char *path = archive_entry_pathname(entry);
 
             if (should_read_part(path)) {
-                ret = read_part(a, &tex, doc);
+                ret = read_part(ctx, a, &tex, doc);
                 if (ret != 0) {
                     break;
                 }

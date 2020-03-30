@@ -6,6 +6,9 @@
 
 typedef struct {
     int enable_tn;
+    log_callback_t log;
+    logf_callback_t logf;
+    store_callback_t store;
 } scan_font_cxt_t;
 
 void parse_font(scan_font_cxt_t *ctx, vfile_t *f, document_t *doc);

@@ -74,7 +74,6 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
     struct archive *a;
     struct archive_entry *entry;
 
-
     arc_data_f data;
     data.f = f;
 
@@ -103,8 +102,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
     }
 
     if (ret != ARCHIVE_OK) {
-        //TODO: log
-//        LOG_ERRORF(doc->filepath, "(arc.c) [%d] %s", ret, archive_error_string(a))
+        CTX_LOG_ERRORF(doc->filepath, "(arc.c) [%d] %s", ret, archive_error_string(a))
         archive_read_free(a);
         return SCAN_ERR_READ;
     }

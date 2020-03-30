@@ -14,7 +14,7 @@
 #define AVIO_BUF_SIZE 8192
 
 __always_inline
-static AVCodecContext *alloc_jpeg_encoder(int dstW, int dstH, float qscale) {
+static AVCodecContext *alloc_jpeg_encoder(scan_media_ctx_t *ctx, int dstW, int dstH, float qscale) {
 
     AVCodec *jpeg_codec = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
     AVCodecContext *jpeg = avcodec_alloc_context3(jpeg_codec);
@@ -28,7 +28,7 @@ static AVCodecContext *alloc_jpeg_encoder(int dstW, int dstH, float qscale) {
     int ret = avcodec_open2(jpeg, jpeg_codec, NULL);
 
     if (ret != 0) {
-        printf("Could not open jpeg encoder: %s!\n", av_err2str(ret));
+        CTX_LOG_WARNINGF("media.c", "Could not open jpeg encoder: %s!\n", av_err2str(ret));
         return NULL;
     }
 
@@ -60,7 +60,7 @@ AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int si
 
     AVFrame *scaled_frame = av_frame_alloc();
 
-    struct SwsContext *ctx = sws_getContext(
+    struct SwsContext *sws_ctx = sws_getContext(
             decoder->width, decoder->height, decoder->pix_fmt,
             dstW, dstH, AV_PIX_FMT_YUVJ420P,
             SWS_FAST_BILINEAR, 0, 0, 0
@@ -71,7 +71,7 @@ AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int si
 
     av_image_fill_arrays(scaled_frame->data, scaled_frame->linesize, dst_buf, AV_PIX_FMT_YUV420P, dstW, dstH, 1);
 
-    sws_scale(ctx,
+    sws_scale(sws_ctx,
               (const uint8_t *const *) frame->data, frame->linesize,
               0, decoder->height,
               scaled_frame->data, scaled_frame->linesize
@@ -81,13 +81,13 @@ AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int si
     scaled_frame->height = dstH;
     scaled_frame->format = AV_PIX_FMT_YUV420P;
 
-    sws_freeContext(ctx);
+    sws_freeContext(sws_ctx);
 
     return scaled_frame;
 }
 
 __always_inline
-static AVFrame *read_frame(AVFormatContext *pFormatCtx, AVCodecContext *decoder, int stream_idx, document_t *doc) {
+static AVFrame *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVCodecContext *decoder, int stream_idx, document_t *doc) {
     AVFrame *frame = av_frame_alloc();
 
     AVPacket avPacket;
@@ -101,10 +101,10 @@ static AVFrame *read_frame(AVFormatContext *pFormatCtx, AVCodecContext *decoder,
 
             if (read_frame_ret != 0) {
                 if (read_frame_ret != AVERROR_EOF) {
-//                    LOG_WARNINGF(doc->filepath,
-//                                 "(media.c) avcodec_read_frame() returned error code [%d] %s",
-//                                 read_frame_ret, av_err2str(read_frame_ret)
-//                    )
+                    CTX_LOG_WARNINGF(doc->filepath,
+                                 "(media.c) avcodec_read_frame() returned error code [%d] %s",
+                                 read_frame_ret, av_err2str(read_frame_ret)
+                    )
                 }
                 av_frame_free(&frame);
                 av_packet_unref(&avPacket);
@@ -122,10 +122,10 @@ static AVFrame *read_frame(AVFormatContext *pFormatCtx, AVCodecContext *decoder,
         // Feed it to decoder
         int decode_ret = avcodec_send_packet(decoder, &avPacket);
         if (decode_ret != 0) {
-//            LOG_ERRORF(doc->filepath,
-//                         "(media.c) avcodec_send_packet() returned error code [%d] %s",
-//                         decode_ret, av_err2str(decode_ret)
-//            )
+            CTX_LOG_ERRORF(doc->filepath,
+                         "(media.c) avcodec_send_packet() returned error code [%d] %s",
+                         decode_ret, av_err2str(decode_ret)
+            )
             av_frame_free(&frame);
             av_packet_unref(&avPacket);
             return NULL;
@@ -264,10 +264,6 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
                     APPEND_META(doc, meta_vid)
                 }
 
-                meta_line_t *meta_audio = malloc(sizeof(meta_line_t));
-                meta_audio->key = MetaMediaAudioCodec;
-                APPEND_META(doc, meta_audio)
-
                 meta_line_t *meta_w = malloc(sizeof(meta_line_t));
                 meta_w->key = MetaWidth;
                 meta_w->int_val = stream->codecpar->width;
@@ -310,7 +306,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
             }
         }
 
-        AVFrame *frame = read_frame(pFormatCtx, decoder, video_stream, doc);
+        AVFrame *frame = read_frame(ctx, pFormatCtx, decoder, video_stream, doc);
         if (frame == NULL) {
             avcodec_free_context(&decoder);
             avformat_close_input(&pFormatCtx);
@@ -332,7 +328,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
         }
 
         // Encode frame to jpeg
-        AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height, ctx->tn_qscale);
+        AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(ctx, scaled_frame->width, scaled_frame->height, ctx->tn_qscale);
         avcodec_send_frame(jpeg_encoder, scaled_frame);
 
         AVPacket jpeg_packet;
@@ -340,8 +336,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
         avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
 
         // Save thumbnail
-//        store_write(ScanCtx.index.store, (char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data,
-//                    jpeg_packet.size);
+        ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
 
         av_packet_unref(&jpeg_packet);
         av_frame_free(&frame);
@@ -359,12 +354,12 @@ void parse_media_filename(scan_media_ctx_t *ctx, const char *filepath, document_
 
     AVFormatContext *pFormatCtx = avformat_alloc_context();
     if (pFormatCtx == NULL) {
-//        LOG_ERROR(doc->filepath, "(media.c) Could not allocate context with avformat_alloc_context()")
+        CTX_LOG_ERROR(doc->filepath, "(media.c) Could not allocate context with avformat_alloc_context()")
         return;
     }
     int res = avformat_open_input(&pFormatCtx, filepath, NULL, NULL);
     if (res < 0) {
-//        LOG_ERRORF(doc->filepath, "(media.c) avformat_open_input() returned [%d] %s", res, av_err2str(res))
+        CTX_LOG_ERRORF(doc->filepath, "(media.c) avformat_open_input() returned [%d] %s", res, av_err2str(res))
         avformat_close_input(&pFormatCtx);
         avformat_free_context(pFormatCtx);
         return;
@@ -389,7 +384,7 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
 
     AVFormatContext *pFormatCtx = avformat_alloc_context();
     if (pFormatCtx == NULL) {
-//        LOG_ERROR(doc->filepath, "(media.c) Could not allocate context with avformat_alloc_context()")
+        CTX_LOG_ERROR(doc->filepath, "(media.c) Could not allocate context with avformat_alloc_context()")
         return;
     }
 
@@ -408,7 +403,7 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
         avformat_free_context(pFormatCtx);
         return;
     } else if (res < 0) {
-//        LOG_ERRORF(doc->filepath, "(media.c) avformat_open_input() returned [%d] %s", res, av_err2str(res))
+        CTX_LOG_ERRORF(doc->filepath, "(media.c) avformat_open_input() returned [%d] %s", res, av_err2str(res))
         av_free(io_ctx->buffer);
         avio_context_free(&io_ctx);
         avformat_close_input(&pFormatCtx);
