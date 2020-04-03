@@ -2,7 +2,6 @@
 #include "../scan.h"
 #include "../util.h"
 #include "../arc/arc.h"
-#include "../ebook/ebook.h"
 
 #include <stdlib.h>
 #include <archive.h>

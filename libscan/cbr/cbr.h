@@ -2,7 +2,7 @@
 #define SCAN_CBR_H
 
 #include <stdlib.h>
-#include "../scan.h"
+#include "../ebook/ebook.h"
 
 typedef struct {
     scan_ebook_ctx_t ebook_ctx;

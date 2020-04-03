@@ -41,6 +41,7 @@ find_package(ZLIB REQUIRED)
 
 include(ExternalProject)
 find_program(MAKE_EXE NAMES gmake nmake make)
+set(MUPDF_CFLAGS "-fPIC -DFZ_ENABLE_JS=0 -DFZ_ENABLE_ICC=0")
 ExternalProject_Add(
         mupdf
         # TODO: use master branch ?
@@ -55,8 +56,7 @@ ExternalProject_Add(
         PREFIX "third-party/ext_mupdf"
         BINARY_DIR "third-party/ext_mupdf/src/mupdf"
 
-        BUILD_COMMAND CFLAGS=-fPIC HAVE_CURL=no HAVE_GLUT=no ${MAKE_EXE} -j 4 --silent
-        && ar d build/release/libmupdf-third.a jutils.o jdinput.o jdmarker.o jdmaster.o
+        BUILD_COMMAND export CFLAGS=${MUPDF_CFLAGS} && HAVE_CURL=no HAVE_GLUT=no USE_SYSTEM_LIBJPEG=yes ${MAKE_EXE} -j 3 --silent
 )
 SET(MUPDF_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_mupdf/src/mupdf/build/release/)
 SET(MUPDF_INC_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_mupdf/src/mupdf/include/)
