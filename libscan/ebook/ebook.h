@@ -16,5 +16,6 @@ typedef struct {
 } scan_ebook_ctx_t;
 
 void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  document_t *doc);
+void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const char* mime_str,  document_t *doc);
 
 #endif

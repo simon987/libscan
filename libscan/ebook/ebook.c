@@ -165,10 +165,7 @@ void fill_image(fz_context *fzctx, UNUSED(fz_device *dev),
     }
 }
 
-void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  document_t *doc) {
-
-    size_t buf_len;
-    void * buf = read_all(f, &buf_len);
+void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const char* mime_str,  document_t *doc) {
 
     static int mu_is_initialized = 0;
     if (!mu_is_initialized) {
@@ -188,10 +185,10 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
     fz_var(err);
 
     fz_try(fzctx)
-    {
-        stream = fz_open_memory(fzctx, buf, buf_len);
-        fzdoc = fz_open_document_with_stream(fzctx, mime_str, stream);
-    }
+            {
+                stream = fz_open_memory(fzctx, buf, buf_len);
+                fzdoc = fz_open_document_with_stream(fzctx, mime_str, stream);
+            }
     fz_catch(fzctx)
         err = fzctx->error.errcode;
 
@@ -204,7 +201,7 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
 
     char title[4096] = {'\0',};
     fz_try(fzctx)
-        fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_TITLE, title, sizeof(title));
+                fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_TITLE, title, sizeof(title));
     fz_catch(fzctx)
         ;
 
@@ -218,7 +215,7 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
     int page_count = -1;
     fz_var(err);
     fz_try(fzctx)
-        page_count = fz_count_pages(fzctx, fzdoc);
+                page_count = fz_count_pages(fzctx, fzdoc);
     fz_catch(fzctx)
         err = fzctx->error.errcode;
 
@@ -249,7 +246,7 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
             fz_page *page = NULL;
             fz_var(err);
             fz_try(fzctx)
-                page = fz_load_page(fzctx, fzdoc, current_page);
+                        page = fz_load_page(fzctx, fzdoc, current_page);
             fz_catch(fzctx)
                 err = fzctx->error.errcode;
             if (err != 0) {
@@ -276,12 +273,12 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
 
             fz_var(err);
             fz_try(fzctx)
-                fz_run_page(fzctx, page, dev, fz_identity, NULL);
+                        fz_run_page(fzctx, page, dev, fz_identity, NULL);
             fz_always(fzctx)
-            {
-                fz_close_device(fzctx, dev);
-                fz_drop_device(fzctx, dev);
-            }
+                {
+                    fz_close_device(fzctx, dev);
+                    fz_drop_device(fzctx, dev);
+                }
             fz_catch(fzctx)
                 err = fzctx->error.errcode;
 
@@ -324,4 +321,10 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
     fz_drop_stream(fzctx, stream);
     fz_drop_document(fzctx, fzdoc);
     fz_drop_context(fzctx);
+}
+
+void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  document_t *doc) {
+    size_t buf_len;
+    void * buf = read_all(f, &buf_len);
+    parse_ebook_mem(ctx, buf, buf_len, mime_str, doc);
 }

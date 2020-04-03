@@ -14,6 +14,7 @@ typedef int archive_mode_t;
 typedef struct {
     archive_mode_t mode;
 
+    parse_callback_t parse;
     log_callback_t log;
     logf_callback_t logf;
     store_callback_t store;

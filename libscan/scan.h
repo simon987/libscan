@@ -53,10 +53,6 @@ typedef int scan_code_t;
 #define CTX_LOG_FATALF(filepath, fmt, ...) ctx->logf(filepath, LEVEL_FATAL, fmt, __VA_ARGS__); exit(-1);
 #define CTX_LOG_FATAL(filepath, str) ctx->log(filepath, LEVEL_FATAL, str); exit(-1);
 
-typedef void (*store_callback_t)(char *key, size_t key_len, char *buf, size_t buf_len);
-typedef void (*logf_callback_t)(char *filepath, int level, char *format, ...);
-typedef void (*log_callback_t)(char *filepath, int level, char *str);
-
 // This is written to file as a 16-bit int!
 enum metakey {
     MetaContent = META_STR(1),
@@ -157,3 +153,8 @@ typedef struct parse_job_t {
 #include "media/media.h"
 #include "ooxml/ooxml.h"
 #include "text/text.h"
+
+typedef void (*store_callback_t)(char *key, size_t key_len, char *buf, size_t buf_len);
+typedef void (*logf_callback_t)(char *filepath, int level, char *format, ...);
+typedef void (*log_callback_t)(char *filepath, int level, char *str);
+typedef void (*parse_callback_t)(parse_job_t *job);

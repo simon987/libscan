@@ -7,18 +7,6 @@
 #include <stdlib.h>
 #include <archive.h>
 
-unsigned int cbr_mime;
-unsigned int cbz_mime;
-
-void cbr_init() {
-    //TODO: get mime str
-//    cbr_mime = mime_get_mime_by_string(ScanCtx.mime_table, "application/x-cbr");
-//    cbz_mime = mime_get_mime_by_string(ScanCtx.mime_table, "application/x-cbz");
-}
-
-int is_cbr(unsigned int mime) {
-    return mime == cbr_mime;
-}
 
 void parse_cbr(scan_cbr_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
@@ -56,10 +44,7 @@ void parse_cbr(scan_cbr_ctx_t *ctx, vfile_t *f, document_t *doc) {
     archive_read_close(rar_in);
     archive_read_free(rar_in);
 
-    doc->mime = cbz_mime;
-
-    //TODO: get mime string
-//    parse_ebook(out_buf, out_buf_used, doc);
-    doc->mime = cbr_mime;
+    parse_ebook_mem(&ctx->ebook_ctx, out_buf, out_buf_used, "application/x-cbz", doc);
+    doc->mime = ctx->cbr_mime;
     free(out_buf);
 }

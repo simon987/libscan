@@ -7,7 +7,7 @@ scan_code_t parse_text(scan_text_ctx_t *ctx, struct vfile *f, document_t *doc) {
     char *buf = malloc(to_read);
     int ret = f->read(f, buf, to_read);
     if (ret < 0) {
-        //TODO: log
+        CTX_LOG_ERRORF(doc->filepath, "read() returned error code: [%d]", ret)
         return SCAN_ERR_READ;
     }
 

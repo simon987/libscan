@@ -152,8 +152,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
                     sub_job->ext = (int) strlen(sub_job->filepath);
                 }
 
-                //TODO:
-//                parse(sub_job);
+                ctx->parse(sub_job);
             }
         }
 
