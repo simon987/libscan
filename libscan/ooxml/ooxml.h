@@ -11,6 +11,6 @@ typedef struct {
     store_callback_t store;
 } scan_ooxml_ctx_t;
 
-void parse_doc(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc);
+void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc);
 
 #endif

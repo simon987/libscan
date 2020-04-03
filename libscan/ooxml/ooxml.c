@@ -94,7 +94,7 @@ static int read_part(scan_ooxml_ctx_t *ctx, struct archive *a, text_buffer_t *bu
     return 0;
 }
 
-void parse_doc(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
+void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     size_t buf_len;
     void * buf = read_all(f, &buf_len);
