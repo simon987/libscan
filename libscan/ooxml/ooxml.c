@@ -33,7 +33,7 @@ static int should_read_part(const char *part) {
     return FALSE;
 }
 
-int extract_text(scan_ooxml_cxt_t *ctx, xmlDoc *xml, xmlNode *node, text_buffer_t *buf) {
+int extract_text(scan_ooxml_ctx_t *ctx, xmlDoc *xml, xmlNode *node, text_buffer_t *buf) {
     //TODO: Check which nodes are likely to have a 't' child, and ignore nodes that aren't
     xmlErrorPtr err = xmlGetLastError();
     if (err != NULL) {
@@ -72,7 +72,7 @@ int xml_io_close(UNUSED(void *context)) {
 }
 
 __always_inline
-static int read_part(scan_ooxml_cxt_t *ctx, struct archive *a, text_buffer_t *buf, document_t *doc) {
+static int read_part(scan_ooxml_ctx_t *ctx, struct archive *a, text_buffer_t *buf, document_t *doc) {
 
     xmlDoc *xml = xmlReadIO(xml_io_read, xml_io_close, a, "/", NULL, XML_PARSE_RECOVER | XML_PARSE_NOWARNING | XML_PARSE_NOERROR | XML_PARSE_NONET);
 
@@ -94,7 +94,7 @@ static int read_part(scan_ooxml_cxt_t *ctx, struct archive *a, text_buffer_t *bu
     return 0;
 }
 
-void parse_doc(scan_ooxml_cxt_t *ctx, vfile_t *f, document_t *doc) {
+void parse_doc(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     size_t buf_len;
     void * buf = read_all(f, &buf_len);

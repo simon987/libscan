@@ -9,9 +9,9 @@ typedef struct {
     log_callback_t log;
     logf_callback_t logf;
     store_callback_t store;
-} scan_font_cxt_t;
+} scan_font_ctx_t;
 
-void parse_font(scan_font_cxt_t *ctx, vfile_t *f, document_t *doc);
+void parse_font(scan_font_ctx_t *ctx, vfile_t *f, document_t *doc);
 void cleanup_font();
 
 #endif

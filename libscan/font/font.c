@@ -138,7 +138,7 @@ void bmp_format(dyn_buffer_t *buf, text_dimensions_t dimensions, const unsigned 
     *(int *) ((char *) buf->buf + 2) = buf->cur;
 }
 
-void parse_font(scan_font_cxt_t *ctx, vfile_t *f, document_t *doc) {
+void parse_font(scan_font_ctx_t *ctx, vfile_t *f, document_t *doc) {
     if (ft_lib == NULL) {
         FT_Init_FreeType(&ft_lib);
     }
