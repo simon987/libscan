@@ -424,3 +424,7 @@ void parse_media(scan_media_ctx_t *ctx, vfile_t *f, document_t *doc) {
         parse_media_vfile(ctx, f, doc);
     }
 }
+
+void init_media() {
+    av_log_set_level(AV_LOG_QUIET);
+}

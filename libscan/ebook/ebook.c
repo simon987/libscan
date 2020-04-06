@@ -327,4 +327,5 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  docum
     size_t buf_len;
     void * buf = read_all(f, &buf_len);
     parse_ebook_mem(ctx, buf, buf_len, mime_str, doc);
+    free(buf);
 }

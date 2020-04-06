@@ -106,6 +106,7 @@ void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
     if (ret != ARCHIVE_OK) {
         CTX_LOG_ERRORF(doc->filepath, "Could not read archive: %s", archive_error_string(a))
         archive_read_free(a);
+        free(buf);
         return;
     }
 
@@ -137,4 +138,5 @@ void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
     archive_read_close(a);
     archive_read_free(a);
     text_buffer_destroy(&tex);
+    free(buf);
 }

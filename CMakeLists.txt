@@ -29,7 +29,7 @@ find_package(lz4 REQUIRED)
 
 find_package(Threads REQUIRED)
 find_package(Tesseract CONFIG REQUIRED)
-find_package(harfbuzz CONFIG REQUIRED)
+find_library(HARFBUZZ_LIBRARIES harfbuzz)
 find_package(OpenJPEG CONFIG REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(LibXml2 REQUIRED)
@@ -37,29 +37,8 @@ find_package(FFMPEG REQUIRED)
 #find_package(OpenSSL REQUIRED)
 find_package(LibLZMA REQUIRED)
 find_package(ZLIB REQUIRED)
-
-
-include(ExternalProject)
-find_program(MAKE_EXE NAMES gmake nmake make)
-set(MUPDF_CFLAGS "-fPIC -DFZ_ENABLE_JS=0 -DFZ_ENABLE_ICC=0")
-ExternalProject_Add(
-        mupdf
-        # TODO: use master branch ?
-        URL https://mupdf.com/downloads/archive/mupdf-1.16.1-source.tar.xz
-
-        UPDATE_COMMAND ""
-        PATCH_COMMAND ""
-        TEST_COMMAND ""
-        CONFIGURE_COMMAND ""
-        INSTALL_COMMAND ""
-
-        PREFIX "third-party/ext_mupdf"
-        BINARY_DIR "third-party/ext_mupdf/src/mupdf"
-
-        BUILD_COMMAND export CFLAGS=${MUPDF_CFLAGS} && HAVE_CURL=no HAVE_GLUT=no USE_SYSTEM_LIBJPEG=yes ${MAKE_EXE} -j 3 --silent
-)
-SET(MUPDF_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_mupdf/src/mupdf/build/release/)
-SET(MUPDF_INC_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_mupdf/src/mupdf/include/)
+find_package(freetype CONFIG REQUIRED)
+find_library(JBIG2DEC_LIB NAMES jbig2decd jbig2dec)
 
 
 target_compile_options(
@@ -67,11 +46,6 @@ target_compile_options(
         PRIVATE
         -Werror
         -g
-)
-
-add_dependencies(
-        scan
-        mupdf
 )
 
 SET(CMAKE_C_LINK_EXECUTABLE "g++ <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
@@ -90,8 +64,12 @@ target_link_libraries(
         lzo2
         LibLZMA::LibLZMA
 
-        freetype
+        ${HARFBUZZ_LIBRARIES}
+        libmupdf
 
+        freetype
+        ${HARFBUZZ_LIBRARIES}
+        ${JBIG2DEC_LIB}
         #        OpenSSL::SSL OpenSSL::Crypto
 
         stdc++
@@ -99,9 +77,6 @@ target_link_libraries(
         -Wl,--whole-archive
         m
         -Wl,--no-whole-archive
-
-        "${MUPDF_LIB_DIR}/libmupdf.a"
-        "${MUPDF_LIB_DIR}/libmupdf-third.a"
 
         ${JPEG_LIBRARIES}
         ${Tesseract_LIBRARIES}

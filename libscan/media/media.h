@@ -15,5 +15,6 @@ typedef struct {
 } scan_media_ctx_t;
 
 void parse_media(scan_media_ctx_t *ctx, vfile_t *f, document_t *doc);
+void init_media();
 
 #endif

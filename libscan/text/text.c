@@ -8,6 +8,7 @@ scan_code_t parse_text(scan_text_ctx_t *ctx, struct vfile *f, document_t *doc) {
     int ret = f->read(f, buf, to_read);
     if (ret < 0) {
         CTX_LOG_ERRORF(doc->filepath, "read() returned error code: [%d]", ret)
+        free(buf);
         return SCAN_ERR_READ;
     }
 
