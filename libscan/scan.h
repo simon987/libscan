@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <sys/stat.h>
-#include "../third-party/uuid/src/uuid.h"
+#include <uuid/uuid.h>
 
 #include "macros.h"
 
