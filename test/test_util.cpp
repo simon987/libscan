@@ -32,6 +32,23 @@ void fs_close(vfile_t *f) {
     }
 }
 
+void load_doc_file(const char *filepath, vfile_t *f, document_t *doc) {
+    doc->meta_head = nullptr;
+    doc->meta_tail = nullptr;
+    load_file(filepath, f);
+}
+
+void load_doc_mem(void *mem, size_t mem_len, vfile_t *f, document_t *doc) {
+    doc->meta_head = nullptr;
+    doc->meta_tail = nullptr;
+    load_mem(mem, mem_len, f);
+}
+
+void cleanup(document_t *doc, vfile_t *f) {
+    destroy_doc(doc);
+    CLOSE_FILE((*f))
+}
+
 void load_file(const char *filepath, vfile_t *f) {
     stat(filepath, &f->info);
     f->fd = open(filepath, O_RDONLY);
