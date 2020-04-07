@@ -115,10 +115,11 @@ typedef struct vfile {
     union {
         int fd;
         struct archive *arc;
+        const void *_test_data;
     };
 
     int is_fs_file;
-    char *filepath;
+    const char *filepath;
     struct stat info;
 
     read_func_t read;

@@ -1,8 +1,8 @@
 #include "text.h"
 
-scan_code_t parse_text(scan_text_ctx_t *ctx, struct vfile *f, document_t *doc) {
+scan_code_t parse_text(scan_text_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
-    int to_read = MIN(ctx->content_size, doc->size);
+    int to_read = MIN(ctx->content_size, f->info.st_size);
 
     char *buf = malloc(to_read);
     int ret = f->read(f, buf, to_read);
@@ -21,8 +21,6 @@ scan_code_t parse_text(scan_text_ctx_t *ctx, struct vfile *f, document_t *doc) {
     strcpy(meta->str_val, tex.dyn_buffer.buf);
 
     APPEND_META(doc, meta)
-
-    printf("%s", meta->str_val);
 
     free(buf);
     text_buffer_destroy(&tex);

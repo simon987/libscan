@@ -9,9 +9,8 @@ typedef struct {
 
     log_callback_t log;
     logf_callback_t logf;
-    store_callback_t store;
 } scan_text_ctx_t;
 
-scan_code_t parse_text(scan_text_ctx_t *ctx, struct vfile *f, document_t *doc);
+scan_code_t parse_text(scan_text_ctx_t *ctx, vfile_t *f, document_t *doc);
 
 #endif

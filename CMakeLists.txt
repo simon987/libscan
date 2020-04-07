@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(scan C)
+project(scan)
 set(CMAKE_C_STANDARD 11)
 
 add_library(
@@ -19,9 +19,10 @@ add_library(
 
         third-party/utf8.h
 )
+set_target_properties(scan PROPERTIES LINKER_LANGUAGE C)
 
 set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
-target_link_directories(scan PRIVATE BEFORE /usr/share/vcpkg/installed/x64-linux/lib/)
+target_link_directories(scan PUBLIC /usr/share/vcpkg/installed/x64-linux/lib/)
 
 find_package(LibArchive REQUIRED)
 find_package(BZip2 REQUIRED)
@@ -48,13 +49,14 @@ target_compile_options(
         -g
 )
 
-SET(CMAKE_C_LINK_EXECUTABLE "g++ <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+#SET(CMAKE_C_LINK_EXECUTABLE "g++ <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 
 string(REGEX REPLACE "-lvdpau" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
 string(REGEX REPLACE "-lX11" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
 
 target_link_libraries(
         scan
+        PUBLIC
 
         ${LibArchive_LIBRARIES}
         ZLIB::ZLIB
@@ -84,6 +86,14 @@ target_link_libraries(
         ${FFMPEG_LIBRARIES}
         z
 
+        # TODO: compile ffmpeg with those disabled?
+        va
+        va-drm
+        va-x11
+        X11
+        vdpau
+
+
         ${CMAKE_THREAD_LIBS_INIT}
 
         uuid
@@ -91,10 +101,20 @@ target_link_libraries(
 
 target_include_directories(
         scan
-        BEFORE
         PUBLIC
         ${MUPDF_INC_DIR}
         ${JPEG_INCLUDE_DIR}
         ${LIBXML2_INCLUDE_DIR}
         ${FFMPEG_INCLUDE_DIR}
 )
+
+# Testing
+find_package(GTest CONFIG REQUIRED)
+
+add_executable(scan_ub_test test/main.cpp test/test_util.cpp test/test_util.h)
+target_compile_options(scan_ub_test PRIVATE -g -fsanitize=undefined -fno-omit-frame-pointer)
+target_link_libraries(scan_ub_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=undefined scan)
+
+add_executable(scan_a_test test/main.cpp test/test_util.cpp test/test_util.h)
+target_compile_options(scan_a_test PRIVATE -g -fsanitize=address -fno-omit-frame-pointer)
+target_link_libraries(scan_a_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=address scan)
