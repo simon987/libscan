@@ -27,7 +27,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     if (err != 0) {
         fz_drop_page(fzctx, cover);
         CTX_LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, fzctx->error.message)
-        return FALSE;
+        return -1;
     }
 
     fz_rect bounds = fz_bound_page(fzctx, cover);
@@ -68,7 +68,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
         CTX_LOG_WARNINGF(doc->filepath, "fz_run_page() returned error code [%d] %s", err, fzctx->error.message)
         fz_drop_page(fzctx, cover);
         fz_drop_pixmap(fzctx, pixmap);
-        return FALSE;
+        return -1;
     }
 
     fz_buffer *fzbuf = NULL;
@@ -93,10 +93,10 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     if (err != 0) {
         CTX_LOG_WARNINGF(doc->filepath, "fz_new_buffer_from_pixmap_as_png() returned error code [%d] %s", err,
                      fzctx->error.message)
-        return FALSE;
+        return -1;
     }
 
-    return TRUE;
+    return 0;
 }
 
 void fz_err_callback(void *user, const char *message) {
@@ -121,6 +121,7 @@ static int read_stext_block(fz_stext_block *block, text_buffer_t *tex) {
 
     fz_stext_line *line = block->u.t.first_line;
     while (line != NULL) {
+        text_buffer_append_char(tex, ' ');
         fz_stext_char *c = line->first_char;
         while (c != NULL) {
             if (text_buffer_append_char(tex, c->c) == TEXT_BUF_FULL) {
@@ -130,6 +131,7 @@ static int read_stext_block(fz_stext_block *block, text_buffer_t *tex) {
         }
         line = line->next;
     }
+    text_buffer_append_char(tex, ' ');
     return 0;
 }
 
@@ -185,10 +187,10 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
     fz_var(err);
 
     fz_try(fzctx)
-            {
-                stream = fz_open_memory(fzctx, buf, buf_len);
-                fzdoc = fz_open_document_with_stream(fzctx, mime_str, stream);
-            }
+    {
+        stream = fz_open_memory(fzctx, buf, buf_len);
+        fzdoc = fz_open_document_with_stream(fzctx, mime_str, stream);
+    }
     fz_catch(fzctx)
         err = fzctx->error.errcode;
 
@@ -199,23 +201,36 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
         return;
     }
 
-    char title[4096] = {'\0',};
+    char title[8192] = {'\0',};
     fz_try(fzctx)
-                fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_TITLE, title, sizeof(title));
+        fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_TITLE, title, sizeof(title));
     fz_catch(fzctx)
         ;
 
     if (strlen(title) > 0) {
-        meta_line_t *meta_content = malloc(sizeof(meta_line_t) + strlen(title));
-        meta_content->key = MetaTitle;
-        strcpy(meta_content->str_val, title);
-        APPEND_META(doc, meta_content)
+        meta_line_t *meta_title = malloc(sizeof(meta_line_t) + strlen(title));
+        meta_title->key = MetaTitle;
+        strcpy(meta_title->str_val, title);
+        APPEND_META(doc, meta_title)
+    }
+
+    char author[4096] = {'\0',};
+    fz_try(fzctx)
+        fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_AUTHOR, author, sizeof(author));
+    fz_catch(fzctx)
+        ;
+
+    if (strlen(author) > 0) {
+        meta_line_t *meta_author = malloc(sizeof(meta_line_t) + strlen(author));
+        meta_author->key = MetaAuthor;
+        strcpy(meta_author->str_val, author);
+        APPEND_META(doc, meta_author)
     }
 
     int page_count = -1;
     fz_var(err);
     fz_try(fzctx)
-                page_count = fz_count_pages(fzctx, fzdoc);
+        page_count = fz_count_pages(fzctx, fzdoc);
     fz_catch(fzctx)
         err = fzctx->error.errcode;
 
@@ -231,7 +246,7 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
         err = render_cover(ctx, fzctx, doc, fzdoc);
     }
 
-    if (err == TRUE) {
+    if (err != 0) {
         fz_drop_stream(fzctx, stream);
         fz_drop_document(fzctx, fzdoc);
         fz_drop_context(fzctx);
@@ -246,7 +261,7 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
             fz_page *page = NULL;
             fz_var(err);
             fz_try(fzctx)
-                        page = fz_load_page(fzctx, fzdoc, current_page);
+                page = fz_load_page(fzctx, fzdoc, current_page);
             fz_catch(fzctx)
                 err = fzctx->error.errcode;
             if (err != 0) {
@@ -273,12 +288,12 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
 
             fz_var(err);
             fz_try(fzctx)
-                        fz_run_page(fzctx, page, dev, fz_identity, NULL);
+                fz_run_page(fzctx, page, dev, fz_identity, NULL);
             fz_always(fzctx)
-                {
-                    fz_close_device(fzctx, dev);
-                    fz_drop_device(fzctx, dev);
-                }
+            {
+                fz_close_device(fzctx, dev);
+                fz_drop_device(fzctx, dev);
+            }
             fz_catch(fzctx)
                 err = fzctx->error.errcode;
 
@@ -304,7 +319,7 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
             fz_drop_stext_page(fzctx, stext);
             fz_drop_page(fzctx, page);
 
-            if (thread_buffer.dyn_buffer.cur >= thread_buffer.dyn_buffer.size) {
+            if (thread_buffer.dyn_buffer.cur >= ctx->content_size) {
                 break;
             }
         }

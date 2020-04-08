@@ -78,6 +78,7 @@ enum metakey {
     MetaExifModel = META_STR(21),
     MetaExifIsoSpeedRatings = META_STR(22),
     MetaExifDateTime = META_STR(23),
+    MetaAuthor = META_STR(24),
 };
 
 typedef struct meta_line {
