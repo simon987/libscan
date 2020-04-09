@@ -7,12 +7,6 @@
 
 #include "macros.h"
 
-// TODO: global init:
-/*
- * av_log_set_level(AV_LOG_QUIET);
- */
-
-
 #define META_INT_MASK 0x80
 #define META_STR_MASK 0x40
 #define META_LONG_MASK 0x20
@@ -151,8 +145,8 @@ typedef struct parse_job_t {
 #include "util.h"
 
 typedef void (*store_callback_t)(char *key, size_t key_len, char *buf, size_t buf_len);
-typedef void (*logf_callback_t)(char *filepath, int level, char *format, ...);
-typedef void (*log_callback_t)(char *filepath, int level, char *str);
+typedef void (*logf_callback_t)(const char *filepath, int level, char *format, ...);
+typedef void (*log_callback_t)(const char *filepath, int level, char *str);
 typedef void (*parse_callback_t)(parse_job_t *job);
 
 #endif

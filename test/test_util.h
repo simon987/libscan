@@ -9,11 +9,11 @@ void load_doc_mem(void *mem, size_t mem_len, vfile_t *f, document_t *doc);
 void load_doc_file(const char *filepath, vfile_t *f, document_t *doc);
 void cleanup(document_t *doc, vfile_t *f);
 
-static void noop_logf(char *filepath, int level, char *format, ...) {
+static void noop_logf(const char *filepath, int level, char *format, ...) {
     // noop
 }
 
-static void noop_log(char *filepath, int level, char *str) {
+static void noop_log(const char *filepath, int level, char *str) {
     // noop
 }
 

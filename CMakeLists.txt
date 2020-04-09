@@ -18,7 +18,7 @@ add_library(
         libscan/font/font.c libscan/font/font.h
 
         third-party/utf8.h
-)
+        libscan/mobi/scan_mobi.c libscan/mobi/scan_mobi.h)
 set_target_properties(scan PROPERTIES LINKER_LANGUAGE C)
 
 set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
@@ -49,7 +49,28 @@ target_compile_options(
         -g
 )
 
-#SET(CMAKE_C_LINK_EXECUTABLE "g++ <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+include(ExternalProject)
+find_program(MAKE_EXE NAMES gmake nmake make)
+ExternalProject_Add(
+        libmobi
+        GIT_REPOSITORY https://github.com/bfabiszewski/libmobi.git
+        GIT_TAG "public"
+
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        TEST_COMMAND ""
+        CONFIGURE_COMMAND ./autogen.sh && ./configure
+        INSTALL_COMMAND ""
+
+        PREFIX "third-party/ext_libmobi"
+        SOURCE_DIR "third-party/ext_libmobi/src/libmobi"
+        BINARY_DIR "third-party/ext_libmobi/src/libmobi"
+
+        BUILD_COMMAND make -j 3 --silent
+)
+
+SET(MOBI_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libmobi/src/libmobi/src/.libs/)
+SET(MOBI_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libmobi/src/libmobi/src/)
 
 string(REGEX REPLACE "-lvdpau" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
 string(REGEX REPLACE "-lX11" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
@@ -68,6 +89,8 @@ target_link_libraries(
 
         ${HARFBUZZ_LIBRARIES}
         libmupdf
+
+        ${MOBI_LIB_DIR}/libmobi.a
 
         freetype
         ${HARFBUZZ_LIBRARIES}
@@ -106,6 +129,7 @@ target_include_directories(
         ${JPEG_INCLUDE_DIR}
         ${LIBXML2_INCLUDE_DIR}
         ${FFMPEG_INCLUDE_DIR}
+        ${MOBI_INCLUDE_DIR}
 )
 
 # Testing

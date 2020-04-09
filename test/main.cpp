@@ -7,6 +7,7 @@ extern "C" {
 #include "../libscan/ebook/ebook.h"
 #include "../libscan/media/media.h"
 #include "../libscan/ooxml/ooxml.h"
+#include "../libscan/mobi/scan_mobi.h"
 #include <libavutil/avutil.h>
 }
 
@@ -22,6 +23,7 @@ static scan_media_ctx_t media_ctx;
 
 static scan_ooxml_ctx_t ooxml_500_ctx;
 
+static scan_mobi_ctx_t mobi_500_ctx;
 
 
 /* Text */
@@ -298,6 +300,49 @@ TEST(Ooxml, Xlsx1) {
     cleanup(&doc, &f);
 }
 
+/* Mobi */
+TEST(Mobi, Mobi1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/mobi/Norse Mythology - Neil Gaiman.mobi", &f, &doc);
+
+    parse_mobi(&mobi_500_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Gaiman, Neil");
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Norse Mythology");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Mobi, Azw) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/mobi/sample.azw", &f, &doc);
+
+    parse_mobi(&mobi_500_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Nietzsche, Friedrich");
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "On the Genealogy of Morality (Hackett Classics)");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Mobi, Azw3) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/mobi/sample.azw3", &f, &doc);
+
+    parse_mobi(&mobi_500_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "George Orwell; Amélie Audiberti");
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "1984");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+
+    cleanup(&doc, &f);
+}
+
 int main(int argc, char **argv) {
     arc_recurse_ctx.log = noop_log;
     arc_recurse_ctx.logf = noop_logf;
@@ -334,6 +379,10 @@ int main(int argc, char **argv) {
     ooxml_500_ctx.content_size = 500;
     ooxml_500_ctx.log = noop_log;
     ooxml_500_ctx.logf = noop_logf;
+
+    mobi_500_ctx.content_size = 500;
+    mobi_500_ctx.log = noop_log;
+    mobi_500_ctx.logf = noop_logf;
 
     av_log_set_level(AV_LOG_QUIET);
     ::testing::InitGoogleTest(&argc, argv);

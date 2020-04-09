@@ -105,12 +105,6 @@ static int read_part(scan_ooxml_ctx_t *ctx, struct archive *a, text_buffer_t *bu
     return ret;
 }
 
-#define APPEND_STR_META(doc, keyname, value) \
-    meta_line_t *meta_str = malloc(sizeof(meta_line_t) + strlen(value)); \
-    meta_str->key = keyname; \
-    strcpy(meta_str->str_val, value); \
-    APPEND_META(doc, meta_str)
-
 __always_inline
 static int read_doc_props(scan_ooxml_ctx_t *ctx, struct archive *a, text_buffer_t *buf, document_t *doc) {
     xmlDoc *xml = xmlReadIO(xml_io_read, xml_io_close, a, "/", NULL,

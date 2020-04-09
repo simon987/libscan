@@ -81,7 +81,7 @@ static dyn_buffer_t dyn_buffer_create() {
 
     buf.size = INITIAL_BUF_SIZE;
     buf.cur = 0;
-    buf.buf = (char*)malloc(INITIAL_BUF_SIZE);
+    buf.buf = (char *) malloc(INITIAL_BUF_SIZE);
 
     return buf;
 }
@@ -92,14 +92,14 @@ static void grow_buffer(dyn_buffer_t *buf, size_t size) {
             buf->size *= 2;
         } while (buf->cur + size > buf->size);
 
-        buf->buf = (char*)realloc(buf->buf, buf->size);
+        buf->buf = (char *) realloc(buf->buf, buf->size);
     }
 }
 
 static void grow_buffer_small(dyn_buffer_t *buf) {
     if (buf->cur + sizeof(long) > buf->size) {
         buf->size *= 2;
-        buf->buf = (char*)realloc(buf->buf, buf->size);
+        buf->buf = (char *) realloc(buf->buf, buf->size);
     }
 }
 
@@ -230,7 +230,7 @@ static int text_buffer_append_string(text_buffer_t *buf, const char *str, size_t
 
     if (len <= 4) {
         for (int i = 0; i < len; i++) {
-            if (((utf8_int32_t)0xffffff80 & str[i]) == 0) {
+            if (((utf8_int32_t) 0xffffff80 & str[i]) == 0) {
                 dyn_buffer_write_char(&buf->dyn_buffer, str[i]);
             }
         }
@@ -241,7 +241,7 @@ static int text_buffer_append_string(text_buffer_t *buf, const char *str, size_t
     char tmp[16];
 
     do {
-        ptr = (char*)utf8codepoint(ptr, &c);
+        ptr = (char *) utf8codepoint(ptr, &c);
         *(int *) tmp = 0x00000000;
         memcpy(tmp, oldPtr, ptr - oldPtr);
         oldPtr = ptr;
@@ -264,8 +264,39 @@ static int text_buffer_append_string0(text_buffer_t *buf, char *str) {
     return text_buffer_append_string(buf, str, strlen(str));
 }
 
-static void* read_all(vfile_t *f, size_t *size) {
-    void* buf = malloc(f->info.st_size);
+static int text_buffer_append_markup(text_buffer_t *buf, const char *markup) {
+
+    int tag_open = TRUE;
+    const char *ptr = markup;
+    const char *start = markup;
+
+    while (*ptr != '\0') {
+        if (tag_open) {
+            if (*ptr == '>') {
+                tag_open = FALSE;
+                start = ptr + 1;
+            }
+        } else {
+            if (*ptr == '<') {
+                tag_open = TRUE;
+                if (ptr != start) {
+                    if (text_buffer_append_string(buf, start, (ptr - start)) == TEXT_BUF_FULL) {
+                        return TEXT_BUF_FULL;
+                    }
+                    if (text_buffer_append_char(buf, ' ') == TEXT_BUF_FULL) {
+                        return TEXT_BUF_FULL;
+                    }
+                }
+            }
+        }
+
+        ptr += 1;
+    }
+    return 0;
+}
+
+static void *read_all(vfile_t *f, size_t *size) {
+    void *buf = malloc(f->info.st_size);
     *size = f->read(f, buf, f->info.st_size);
 
     //TODO: log
