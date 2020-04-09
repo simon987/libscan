@@ -6,6 +6,7 @@ extern "C" {
 #include "../libscan/text/text.h"
 #include "../libscan/ebook/ebook.h"
 #include "../libscan/media/media.h"
+#include "../libscan/ooxml/ooxml.h"
 #include <libavutil/avutil.h>
 }
 
@@ -18,6 +19,8 @@ static scan_ebook_ctx_t ebook_ctx;
 static scan_ebook_ctx_t ebook_500_ctx;
 
 static scan_media_ctx_t media_ctx;
+
+static scan_ooxml_ctx_t ooxml_500_ctx;
 
 
 
@@ -231,6 +234,69 @@ TEST(MediaVideo, Vid3Webm) {
     cleanup(&doc, &f);
 }
 
+//TODO: test music file with embedded cover art
+
+TEST(MediaAudio, MusicMp3) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/02-The Watchmaker-Barry James_spoken.mp3", &f, &doc);
+
+    parse_media(&media_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaArtist)->str_val, "Barry James");
+    ASSERT_STREQ(get_meta(&doc, MetaAlbum)->str_val, "Strange Slumber, Music for Wonderful Dreams");
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "The Watchmaker");
+    ASSERT_STREQ(get_meta(&doc, MetaGenre)->str_val, "New Age");
+    ASSERT_STREQ(get_meta(&doc, MetaContent)->str_val, "http://magnatune.com/artists/barry_james");
+    ASSERT_STREQ(get_meta(&doc, MetaMediaAudioCodec)->str_val, "mp3");
+
+    cleanup(&doc, &f);
+}
+
+/* OOXML */
+
+TEST(Ooxml, Pptx1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ooxml/Catalist Presentation.pptx", &f, &doc);
+
+    parse_ooxml(&ooxml_500_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Slide 1");
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "thofeller");
+    ASSERT_STREQ(get_meta(&doc, MetaModifiedBy)->str_val, "Hofeller");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Ooxml, Docx1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ooxml/How To Play A DVD On Windows 8.docx", &f, &doc);
+
+    parse_ooxml(&ooxml_500_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Thomas");
+    ASSERT_STREQ(get_meta(&doc, MetaModifiedBy)->str_val, "Thomas");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Ooxml, Xlsx1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ooxml/xlsx1.xlsx", &f, &doc);
+
+    parse_ooxml(&ooxml_500_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Bureau of Economic Analysis");
+    ASSERT_STREQ(get_meta(&doc, MetaModifiedBy)->str_val, "lz");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+
+    cleanup(&doc, &f);
+}
 
 int main(int argc, char **argv) {
     arc_recurse_ctx.log = noop_log;
@@ -264,6 +330,10 @@ int main(int argc, char **argv) {
     media_ctx.store = noop_store;
     media_ctx.tn_size = 500;
     media_ctx.tn_qscale = 1.0;
+
+    ooxml_500_ctx.content_size = 500;
+    ooxml_500_ctx.log = noop_log;
+    ooxml_500_ctx.logf = noop_logf;
 
     av_log_set_level(AV_LOG_QUIET);
     ::testing::InitGoogleTest(&argc, argv);

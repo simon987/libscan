@@ -12,6 +12,8 @@
 
 #define MIN_SIZE 32
 #define AVIO_BUF_SIZE 8192
+#define IS_VIDEO(fmt) (fmt->iformat->name && strcmp(fmt->iformat->name, "image2") != 0)
+
 
 __always_inline
 static AVCodecContext *alloc_jpeg_encoder(scan_media_ctx_t *ctx, int dstW, int dstH, float qscale) {
@@ -167,6 +169,8 @@ static void append_audio_meta(AVFormatContext *pFormatCtx, document_t *doc) {
             APPEND_TAG_META(doc, tag, MetaAlbumArtist)
         } else if (strcmp(key, "album") == 0) {
             APPEND_TAG_META(doc, tag, MetaAlbum)
+        } else if (strcmp(key, "comment") == 0) {
+            APPEND_TAG_META(doc, tag, MetaContent)
         }
     }
 }
@@ -227,8 +231,6 @@ append_video_meta(AVFormatContext *pFormatCtx, AVFrame *frame, document_t *doc, 
         }
     }
 }
-
-#define IS_VIDEO(fmt) (fmt->iformat->name && strcmp(fmt->iformat->name, "image2") != 0)
 
 void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, document_t *doc) {
 
