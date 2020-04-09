@@ -5,7 +5,6 @@
 #include "../scan.h"
 
 typedef struct {
-    long content_size;
     int tn_size;
     float tn_qscale;
 

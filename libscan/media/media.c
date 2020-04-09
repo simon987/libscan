@@ -228,6 +228,8 @@ append_video_meta(AVFormatContext *pFormatCtx, AVFrame *frame, document_t *doc, 
     }
 }
 
+#define IS_VIDEO(fmt) (fmt->iformat->name && strcmp(fmt->iformat->name, "image2") != 0)
+
 void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, document_t *doc) {
 
     int video_stream = -1;
@@ -256,6 +258,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
             if (video_stream == -1) {
                 const AVCodecDescriptor *desc = avcodec_descriptor_get(stream->codecpar->codec_id);
+
 
                 if (desc != NULL) {
                     meta_line_t *meta_vid = malloc(sizeof(meta_line_t));
@@ -314,7 +317,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
             return;
         }
 
-        append_video_meta(pFormatCtx, frame, doc, audio_stream == -1, stream->nb_frames > 1);
+        append_video_meta(pFormatCtx, frame, doc, audio_stream == -1, IS_VIDEO(pFormatCtx));
 
         // Scale frame
         AVFrame *scaled_frame = scale_frame(decoder, frame, ctx->tn_size);

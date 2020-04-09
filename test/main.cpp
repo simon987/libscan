@@ -1,10 +1,12 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "test_util.h"
 
 extern "C" {
 #include "../libscan/arc/arc.h"
 #include "../libscan/text/text.h"
 #include "../libscan/ebook/ebook.h"
+#include "../libscan/media/media.h"
+#include <libavutil/avutil.h>
 }
 
 static scan_arc_ctx_t arc_recurse_ctx;
@@ -14,6 +16,8 @@ static scan_text_ctx_t text_500_ctx;
 
 static scan_ebook_ctx_t ebook_ctx;
 static scan_ebook_ctx_t ebook_500_ctx;
+
+static scan_media_ctx_t media_ctx;
 
 
 
@@ -117,6 +121,116 @@ TEST(Ebook, Utf8Pdf) {
     cleanup(&doc, &f);
 }
 
+TEST(Ebook, Epub1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/epub1.epub", &f, &doc);
+
+    parse_ebook(&ebook_500_ctx, &f, "application/epub+zip", &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Rabies");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    cleanup(&doc, &f);
+}
+
+TEST(Ebook, ComicCbz) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/lost_treasure.cbz", &f, &doc);
+
+    parse_ebook(&ebook_500_ctx, &f, "application/vnd.comicbook+zip", &doc);
+
+    //TODO: Check that thumbnail was generated correctly
+    cleanup(&doc, &f);
+}
+
+TEST(Ebook, ComicCbr) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/laugh.cbr", &f, &doc);
+
+    parse_ebook(&ebook_500_ctx, &f, "application/vnd.comicbook-rar", &doc);
+
+    //TODO: Check that thumbnail was generated correctly
+    cleanup(&doc, &f);
+}
+
+/* Media (image) */
+
+TEST(MediaImage, Exif1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/exiftest1.jpg", &f, &doc);
+
+    parse_media(&media_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaContent)->str_val, "I don't know if it's a thing mostly done for high end "
+                                                       "hotels or what, but I've seen it in a few places in Thailand: "
+                                                       "There's a tradition of flower folding, doing a sort of light "
+                                                       "origami with the petals of lotus and other flowers, to make "
+                                                       "cute little ornaments.");
+    ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "NIKON CORPORATION");
+    ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "NIKON D7000");
+    ASSERT_STREQ(get_meta(&doc, MetaExifDateTime)->str_val, "2019:11:08 14:37:59");
+    ASSERT_STREQ(get_meta(&doc, MetaExifExposureTime)->str_val, "1:160");
+    ASSERT_STREQ(get_meta(&doc, MetaArtist)->str_val, "FinalDoom");
+    ASSERT_STREQ(get_meta(&doc, MetaExifSoftware)->str_val, "Adobe Photoshop Lightroom 5.7 (Windows)");
+    ASSERT_STREQ(get_meta(&doc, MetaExifFNumber)->str_val, "53:10");
+    ASSERT_STREQ(get_meta(&doc, MetaExifFocalLength)->str_val, "900:10");
+    ASSERT_STREQ(get_meta(&doc, MetaExifIsoSpeedRatings)->str_val, "400");
+    ASSERT_STREQ(get_meta(&doc, MetaExifExposureTime)->str_val, "1:160");
+
+    //TODO: Check that thumbnail was generated correctly
+    cleanup(&doc, &f);
+}
+
+TEST(MediaVideo, Vid3Mp4) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/vid3.mp4", &f, &doc);
+
+    parse_media(&media_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Helicopter (((Accident))) - "
+                                                     "https://archive.org/details/Virginia_Helicopter_Crash");
+    ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "h264");
+    ASSERT_EQ(get_meta(&doc, MetaMediaBitrate)->long_val, 825169);
+    ASSERT_EQ(get_meta(&doc, MetaMediaDuration)->long_val, 10);
+
+    //TODO: Check that thumbnail was generated correctly
+    cleanup(&doc, &f);
+}
+
+TEST(MediaVideo, Vid3Ogv) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/vid3.ogv", &f, &doc);
+
+    parse_media(&media_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "theora");
+    ASSERT_EQ(get_meta(&doc, MetaMediaBitrate)->long_val, 590261);
+    ASSERT_EQ(get_meta(&doc, MetaMediaDuration)->long_val, 10);
+
+    //TODO: Check that thumbnail was generated correctly
+    cleanup(&doc, &f);
+}
+
+TEST(MediaVideo, Vid3Webm) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/vid3.webm", &f, &doc);
+
+    parse_media(&media_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "vp8");
+    ASSERT_EQ(get_meta(&doc, MetaMediaBitrate)->long_val, 343153);
+    ASSERT_EQ(get_meta(&doc, MetaMediaDuration)->long_val, 10);
+
+    //TODO: Check that thumbnail was generated correctly
+    cleanup(&doc, &f);
+}
+
 
 int main(int argc, char **argv) {
     arc_recurse_ctx.log = noop_log;
@@ -139,13 +253,19 @@ int main(int argc, char **argv) {
     ebook_ctx.tesseract_lang = "eng";
     ebook_ctx.tesseract_path = "./tessdata";
     ebook_ctx.tn_size = 500;
-    pthread_mutex_init(&ebook_ctx.mupdf_mutex, nullptr);
     ebook_ctx.log = noop_log;
     ebook_ctx.logf = noop_logf;
 
     ebook_500_ctx = ebook_ctx;
     ebook_500_ctx.content_size = 500;
 
+    media_ctx.log = noop_log;
+    media_ctx.logf = noop_logf;
+    media_ctx.store = noop_store;
+    media_ctx.tn_size = 500;
+    media_ctx.tn_qscale = 1.0;
+
+    av_log_set_level(AV_LOG_QUIET);
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

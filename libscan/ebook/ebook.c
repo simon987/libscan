@@ -175,6 +175,7 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
         mu_is_initialized = 1;
     }
     fz_context *fzctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
+    thread_ctx = *ctx;
 
     init_fzctx(fzctx, doc);
 
