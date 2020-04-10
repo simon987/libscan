@@ -292,6 +292,15 @@ static int text_buffer_append_markup(text_buffer_t *buf, const char *markup) {
 
         ptr += 1;
     }
+
+    if (ptr != start) {
+        if (text_buffer_append_string(buf, start, (ptr - start)) == TEXT_BUF_FULL) {
+            return TEXT_BUF_FULL;
+        }
+        if (text_buffer_append_char(buf, ' ') == TEXT_BUF_FULL) {
+            return TEXT_BUF_FULL;
+        }
+    }
     return 0;
 }
 

@@ -13,4 +13,6 @@ typedef struct {
 
 scan_code_t parse_text(scan_text_ctx_t *ctx, vfile_t *f, document_t *doc);
 
+scan_code_t parse_markup(scan_text_ctx_t *ctx, vfile_t *f, document_t *doc);
+
 #endif

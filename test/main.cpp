@@ -35,7 +35,7 @@ TEST(Text, BookCsvContentLen) {
 
     parse_text(&text_500_ctx, &f, &doc);
 
-    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
     cleanup(&doc, &f);
 }
 
@@ -99,6 +99,42 @@ TEST(Text, MemWhitespace) {
     cleanup(&doc, &f);
 }
 
+TEST(TextMarkup, Mem1) {
+    const char *content = "<<a<aa<<<>test<aaaa><>test test    <>";
+    vfile_t f;
+    document_t doc;
+    load_doc_mem((void *) content, strlen(content), &f, &doc);
+
+    parse_markup(&text_500_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaContent)->str_val, "test test test");
+    cleanup(&doc, &f);
+}
+
+TEST(TextMarkup, Mem2) {
+    const char *content = "<<a<aa<<<>test<aaaa><>test test    ";
+    vfile_t f;
+    document_t doc;
+    load_doc_mem((void *) content, strlen(content), &f, &doc);
+
+    parse_markup(&text_500_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaContent)->str_val, "test test test");
+    cleanup(&doc, &f);
+}
+
+TEST(TextMarkup, Xml1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/text/utf8-example.xml", &f, &doc);
+
+    parse_markup(&text_500_ctx, &f, &doc);
+
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "BMP:𐌈") != nullptr);
+    cleanup(&doc, &f);
+}
+
 /* Ebook */
 
 TEST(Ebook, CandlePdf) {
@@ -110,7 +146,7 @@ TEST(Ebook, CandlePdf) {
 
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Microsoft Word - A531 Candlemaking-01.doc");
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Dafydd Prichard");
-    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
     ASSERT_NE(get_meta(&doc, MetaContent)->str_val[0], ' ');
     cleanup(&doc, &f);
 }
@@ -134,7 +170,7 @@ TEST(Ebook, Epub1) {
     parse_ebook(&ebook_500_ctx, &f, "application/epub+zip", &doc);
 
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Rabies");
-    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
     cleanup(&doc, &f);
 }
 
@@ -267,7 +303,7 @@ TEST(Ooxml, Pptx1) {
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Slide 1");
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "thofeller");
     ASSERT_STREQ(get_meta(&doc, MetaModifiedBy)->str_val, "Hofeller");
-    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
 
     cleanup(&doc, &f);
 }
@@ -281,7 +317,7 @@ TEST(Ooxml, Docx1) {
 
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Thomas");
     ASSERT_STREQ(get_meta(&doc, MetaModifiedBy)->str_val, "Thomas");
-    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
 
     cleanup(&doc, &f);
 }
@@ -295,7 +331,7 @@ TEST(Ooxml, Xlsx1) {
 
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Bureau of Economic Analysis");
     ASSERT_STREQ(get_meta(&doc, MetaModifiedBy)->str_val, "lz");
-    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
 
     cleanup(&doc, &f);
 }
@@ -310,7 +346,7 @@ TEST(Mobi, Mobi1) {
 
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Gaiman, Neil");
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Norse Mythology");
-    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
 
     cleanup(&doc, &f);
 }
@@ -324,7 +360,7 @@ TEST(Mobi, Azw) {
 
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Nietzsche, Friedrich");
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "On the Genealogy of Morality (Hackett Classics)");
-    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
 
     cleanup(&doc, &f);
 }
@@ -338,7 +374,7 @@ TEST(Mobi, Azw3) {
 
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "George Orwell; Amélie Audiberti");
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "1984");
-    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 1);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
 
     cleanup(&doc, &f);
 }
