@@ -99,6 +99,25 @@ TEST(Text, MemWhitespace) {
     cleanup(&doc, &f);
 }
 
+TEST(Text, MemNoise) {
+    char content[600];
+
+    for (char &i : content) {
+        int x = rand();
+        i = x == 0 ? 1 : x;
+    }
+    content[599] = '\0';
+
+    vfile_t f;
+    document_t doc;
+    load_doc_mem((void *) content, strlen(content), &f, &doc);
+
+    parse_text(&text_500_ctx, &f, &doc);
+
+    ASSERT_TRUE(utf8valid(get_meta(&doc, MetaContent)->str_val) == 0);
+    cleanup(&doc, &f);
+}
+
 TEST(TextMarkup, Mem1) {
     const char *content = "<<a<aa<<<>test<aaaa><>test test    <>";
     vfile_t f;

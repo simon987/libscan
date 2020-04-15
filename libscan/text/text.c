@@ -30,13 +30,15 @@ scan_code_t parse_markup(scan_text_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     int to_read = MIN(MAX_MARKUP_SIZE, f->info.st_size);
 
-    char *buf = malloc(to_read);
+    char *buf = malloc(to_read + 1);
     int ret = f->read(f, buf, to_read);
     if (ret < 0) {
         CTX_LOG_ERRORF(doc->filepath, "read() returned error code: [%d]", ret)
         free(buf);
         return SCAN_ERR_READ;
     }
+
+    *(buf + to_read) = '\0';
 
     text_buffer_t tex = text_buffer_create(ctx->content_size);
     text_buffer_append_markup(&tex, buf);
