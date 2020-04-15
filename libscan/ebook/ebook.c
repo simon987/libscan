@@ -83,6 +83,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     if (err == 0) {
         unsigned char *tn_buf;
         size_t tn_len = fz_buffer_storage(fzctx, fzbuf, &tn_buf);
+        APPEND_TN_META(doc, pixmap->x, pixmap->y)
         ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) tn_buf, tn_len);
     }
 

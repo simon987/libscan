@@ -25,3 +25,9 @@
     meta_str->key = keyname; \
     strcpy(meta_str->str_val, value); \
     APPEND_META(doc, meta_str)
+
+#define APPEND_TN_META(doc, width, height) \
+    meta_line_t *meta_str = malloc(sizeof(meta_line_t) + 4 + 1 + 4); \
+    meta_str->key = MetaThumbnail; \
+    sprintf(meta_str->str_val, "%04d,%04d", width, height); \
+    APPEND_META(doc, meta_str)

@@ -221,6 +221,7 @@ void parse_font(scan_font_ctx_t *ctx, vfile_t *f, document_t *doc) {
     dyn_buffer_t bmp_data = dyn_buffer_create();
     bmp_format(&bmp_data, dimensions, bitmap);
 
+    APPEND_TN_META(doc, dimensions.width, dimensions.height)
     ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) bmp_data.buf, bmp_data.cur);
 
     dyn_buffer_destroy(&bmp_data);

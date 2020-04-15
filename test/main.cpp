@@ -131,7 +131,7 @@ TEST(TextMarkup, Xml1) {
     parse_markup(&text_500_ctx, &f, &doc);
 
     ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
-    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "BMP:𐌈") != nullptr);
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, " BMP:𐌈 ") != nullptr);
     cleanup(&doc, &f);
 }
 

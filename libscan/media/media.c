@@ -341,6 +341,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
         avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
 
         // Save thumbnail
+        APPEND_TN_META(doc, scaled_frame->width, scaled_frame->height)
         ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
 
         av_packet_unref(&jpeg_packet);
