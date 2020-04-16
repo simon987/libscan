@@ -72,6 +72,11 @@ ExternalProject_Add(
 SET(MOBI_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libmobi/src/libmobi/src/.libs/)
 SET(MOBI_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libmobi/src/libmobi/src/)
 
+add_dependencies(
+        scan
+        libmobi
+)
+
 string(REGEX REPLACE "-lvdpau" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
 string(REGEX REPLACE "-lX11" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
 
