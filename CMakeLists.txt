@@ -30,7 +30,6 @@ find_package(lz4 REQUIRED)
 
 find_package(Threads REQUIRED)
 find_package(Tesseract CONFIG REQUIRED)
-find_library(HARFBUZZ_LIBRARIES harfbuzz)
 find_package(OpenJPEG CONFIG REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(LibXml2 REQUIRED)
@@ -38,8 +37,9 @@ find_package(FFMPEG REQUIRED)
 #find_package(OpenSSL REQUIRED)
 find_package(LibLZMA REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(freetype CONFIG REQUIRED)
 find_library(JBIG2DEC_LIB NAMES jbig2decd jbig2dec)
+find_library(HARFBUZZ_LIB NAMES harfbuzz harfbuzzd)
+find_library(FREETYPE_LIB NAMES freetype freetyped)
 
 
 target_compile_options(
@@ -66,19 +66,40 @@ ExternalProject_Add(
         SOURCE_DIR "third-party/ext_libmobi/src/libmobi"
         BINARY_DIR "third-party/ext_libmobi/src/libmobi"
 
-        BUILD_COMMAND make -j 3 --silent
+        BUILD_COMMAND ${MAKE_EXE} -j 4 --silent
 )
 
 SET(MOBI_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libmobi/src/libmobi/src/.libs/)
 SET(MOBI_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libmobi/src/libmobi/src/)
 
+ExternalProject_Add(
+        ffmpeg
+        GIT_REPOSITORY https://git.ffmpeg.org/ffmpeg.git
+        GIT_TAG "master"
+
+        UPDATE_COMMAND ""
+        PATCH_COMMAND ""
+        TEST_COMMAND ""
+        CONFIGURE_COMMAND ./configure --disable-shared --enable-static --disable-ffmpeg --disable-ffplay
+        --disable-ffprobe --disable-doc --disable-manpages --disable-postproc --disable-avfilter --disable-alsa
+        --disable-lzma --disable-xlib --disable-debug --disable-vdpau --disable-vaapi --disable-sdl2
+        --disable-network --extra-cflags=-fPIC
+        INSTALL_COMMAND ""
+
+        PREFIX "third-party/ext_ffmpeg"
+        SOURCE_DIR "third-party/ext_ffmpeg/src/ffmpeg"
+        BINARY_DIR "third-party/ext_ffmpeg/src/ffmpeg"
+
+        BUILD_COMMAND ${MAKE_EXE} -j 3 --silent
+)
+
+SET(FFMPEG_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_ffmpeg/src/ffmpeg)
+
 add_dependencies(
         scan
         libmobi
+        ffmpeg
 )
-
-string(REGEX REPLACE "-lvdpau" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
-string(REGEX REPLACE "-lX11" "" FFMPEG_LIBRARIES "${FFMPEG_LIBRARIES}")
 
 target_link_libraries(
         scan
@@ -92,13 +113,12 @@ target_link_libraries(
         lzo2
         LibLZMA::LibLZMA
 
-        ${HARFBUZZ_LIBRARIES}
         libmupdf
 
         ${MOBI_LIB_DIR}/libmobi.a
 
-        freetype
-        ${HARFBUZZ_LIBRARIES}
+        ${FREETYPE_LIB}
+        ${HARFBUZZ_LIB}
         ${JBIG2DEC_LIB}
         #        OpenSSL::SSL OpenSSL::Crypto
 
@@ -111,16 +131,15 @@ target_link_libraries(
         ${JPEG_LIBRARIES}
         ${Tesseract_LIBRARIES}
         ${LIBXML2_LIBRARIES}
-        ${FFMPEG_LIBRARIES}
+        ${FREETYPE_LIB}
+
+        ${FFMPEG_LIB_DIR}/libavformat/libavformat.a
+        ${FFMPEG_LIB_DIR}/libavcodec/libavcodec.a
+        ${FFMPEG_LIB_DIR}/libavutil/libavutil.a
+        ${FFMPEG_LIB_DIR}/libswresample/libswresample.a
+        ${FFMPEG_LIB_DIR}/libswscale/libswscale.a
+
         z
-
-        # TODO: compile ffmpeg with those disabled?
-        va
-        va-drm
-        va-x11
-        X11
-        vdpau
-
 
         ${CMAKE_THREAD_LIBS_INIT}
 
