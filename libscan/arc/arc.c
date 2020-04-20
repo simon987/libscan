@@ -140,8 +140,8 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
         memcpy(sub_job->parent, doc->uuid, sizeof(uuid_t));
 
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
-            sub_job->info = *archive_entry_stat(entry);
-            if (S_ISREG(sub_job->info.st_mode)) {
+            sub_job->vfile.info = *archive_entry_stat(entry);
+            if (S_ISREG(sub_job->vfile.info.st_mode)) {
                 sprintf(sub_job->filepath, "%s#/%s", f->filepath, archive_entry_pathname(entry));
                 sub_job->base = (int) (strrchr(sub_job->filepath, '/') - sub_job->filepath) + 1;
 

@@ -126,7 +126,6 @@ typedef struct vfile {
 typedef struct parse_job_t {
     int base;
     int ext;
-    struct stat info;
     struct vfile vfile;
     uuid_t parent;
     char filepath[1];

@@ -46,4 +46,5 @@ void parse_cbr(scan_cbr_ctx_t *ctx, vfile_t *f, document_t *doc) {
     parse_ebook_mem(&ctx->ebook_ctx, out_buf, out_buf_used, "application/x-cbz", doc);
     doc->mime = ctx->cbr_mime;
     free(out_buf);
+    free(buf);
 }
