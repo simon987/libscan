@@ -247,10 +247,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
                 const AVCodecDescriptor *desc = avcodec_descriptor_get(stream->codecpar->codec_id);
 
                 if (desc != NULL) {
-                    meta_line_t *meta_audio = malloc(sizeof(meta_line_t));
-                    meta_audio->key = MetaMediaAudioCodec;
-                    strcpy(meta_audio->str_val, desc->name);
-                    APPEND_META(doc, meta_audio)
+                    APPEND_STR_META(doc, MetaMediaAudioCodec, desc->name)
                 }
 
                 append_audio_meta(pFormatCtx, doc);
@@ -263,10 +260,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
 
                 if (desc != NULL) {
-                    meta_line_t *meta_vid = malloc(sizeof(meta_line_t));
-                    meta_vid->key = MetaMediaVideoCodec;
-                    strcpy(meta_vid->str_val, desc->name);
-                    APPEND_META(doc, meta_vid)
+                    APPEND_STR_META(doc, MetaMediaVideoCodec, desc->name)
                 }
 
                 meta_line_t *meta_w = malloc(sizeof(meta_line_t));
