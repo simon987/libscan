@@ -44,7 +44,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
 
     bounds = fz_transform_rect(bounds, m);
     fz_irect bbox = fz_round_rect(bounds);
-    fz_pixmap *pixmap = fz_new_pixmap_with_bbox(fzctx, fzctx->colorspace->rgb, bbox, NULL, 0);
+    fz_pixmap *pixmap = fz_new_pixmap_with_bbox(fzctx, fz_device_rgb(fzctx), bbox, NULL, 0);
 
     fz_clear_pixmap_with_value(fzctx, pixmap, 0xFF);
     fz_device *dev = fz_new_draw_device(fzctx, m, pixmap);
