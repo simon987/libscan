@@ -37,6 +37,10 @@ int arc_read(struct vfile *f, void *buf, size_t size) {
     return archive_read_data(f->arc, buf, size);
 }
 
+void arc_reset(struct vfile *f) {
+    archive_seek_data(f->arc, 0, SEEK_SET);
+}
+
 typedef struct arc_data {
     vfile_t *f;
     char buf[ARC_BUF_SIZE];
@@ -134,6 +138,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
         sub_job->vfile.close = NULL;
         sub_job->vfile.read = arc_read;
+        sub_job->vfile.reset = arc_reset;
         sub_job->vfile.arc = a;
         sub_job->vfile.filepath = sub_job->filepath;
         sub_job->vfile.is_fs_file = FALSE;

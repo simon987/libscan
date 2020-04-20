@@ -108,6 +108,8 @@ typedef int (*read_func_t)(struct vfile *, void *buf, size_t size);
 
 typedef void (*close_func_t)(struct vfile *);
 
+typedef void (*reset_func_t)(struct vfile *);
+
 typedef struct vfile {
     union {
         int fd;
@@ -121,6 +123,7 @@ typedef struct vfile {
 
     read_func_t read;
     close_func_t close;
+    reset_func_t reset;
 } vfile_t;
 
 typedef struct parse_job_t {
