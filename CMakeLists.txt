@@ -142,8 +142,6 @@ target_link_libraries(
         z
 
         ${CMAKE_THREAD_LIBS_INIT}
-
-        uuid
 )
 
 target_include_directories(
