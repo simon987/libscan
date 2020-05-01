@@ -230,7 +230,7 @@ static int text_buffer_append_string(text_buffer_t *buf, const char *str, size_t
 
     if (len <= 4) {
         for (int i = 0; i < len; i++) {
-            if (((utf8_int32_t) 0xffffff80 & str[i]) == 0) {
+            if (((utf8_int32_t) 0xffffff80 & str[i]) == 0 && SHOULD_KEEP_CHAR(str[i])) {
                 dyn_buffer_write_char(&buf->dyn_buffer, str[i]);
             }
         }
