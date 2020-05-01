@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.15)
 project(scan)
 set(CMAKE_C_STANDARD 11)
 
+option(BUILD_TESTS "Build tests" off)
+
 add_library(
         scan
         libscan/util.c libscan/util.h
@@ -37,9 +39,11 @@ find_package(FFMPEG REQUIRED)
 #find_package(OpenSSL REQUIRED)
 find_package(LibLZMA REQUIRED)
 find_package(ZLIB REQUIRED)
+
 find_library(JBIG2DEC_LIB NAMES jbig2decd jbig2dec)
 find_library(HARFBUZZ_LIB NAMES harfbuzz harfbuzzd)
 find_library(FREETYPE_LIB NAMES freetype freetyped)
+find_library(LZO2_LIB NAMES lzo2)
 
 
 target_compile_options(
@@ -109,11 +113,11 @@ target_link_libraries(
         ZLIB::ZLIB
         BZip2::BZip2
         lz4::lz4
-        zstd
-        lzo2
+        ${LZO2_LIB}
         LibLZMA::LibLZMA
 
         libmupdf
+        openjp2
 
         ${MOBI_LIB_DIR}/libmobi.a
 
@@ -154,13 +158,14 @@ target_include_directories(
         ${MOBI_INCLUDE_DIR}
 )
 
-# Testing
-find_package(GTest CONFIG REQUIRED)
+if (BUILD_TESTS)
+    find_package(GTest CONFIG REQUIRED)
 
-add_executable(scan_ub_test test/main.cpp test/test_util.cpp test/test_util.h)
-target_compile_options(scan_ub_test PRIVATE -g -fsanitize=undefined -fno-omit-frame-pointer)
-target_link_libraries(scan_ub_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=undefined scan)
+    add_executable(scan_ub_test test/main.cpp test/test_util.cpp test/test_util.h)
+    target_compile_options(scan_ub_test PRIVATE -g -fsanitize=undefined -fno-omit-frame-pointer)
+    target_link_libraries(scan_ub_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=undefined scan)
 
-add_executable(scan_a_test test/main.cpp test/test_util.cpp test/test_util.h)
-target_compile_options(scan_a_test PRIVATE -g -fsanitize=address -fno-omit-frame-pointer)
-target_link_libraries(scan_a_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=address scan)
+    add_executable(scan_a_test test/main.cpp test/test_util.cpp test/test_util.h)
+    target_compile_options(scan_a_test PRIVATE -g -fsanitize=address -fno-omit-frame-pointer)
+    target_link_libraries(scan_a_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=address scan)
+endif()
