@@ -89,7 +89,8 @@ AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int si
 }
 
 __always_inline
-static AVFrame *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVCodecContext *decoder, int stream_idx, document_t *doc) {
+static AVFrame *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVCodecContext *decoder, int stream_idx,
+                           document_t *doc) {
     AVFrame *frame = av_frame_alloc();
 
     AVPacket avPacket;
@@ -104,8 +105,8 @@ static AVFrame *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, A
             if (read_frame_ret != 0) {
                 if (read_frame_ret != AVERROR_EOF) {
                     CTX_LOG_WARNINGF(doc->filepath,
-                                 "(media.c) avcodec_read_frame() returned error code [%d] %s",
-                                 read_frame_ret, av_err2str(read_frame_ret)
+                                     "(media.c) avcodec_read_frame() returned error code [%d] %s",
+                                     read_frame_ret, av_err2str(read_frame_ret)
                     )
                 }
                 av_frame_free(&frame);
@@ -125,8 +126,8 @@ static AVFrame *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, A
         int decode_ret = avcodec_send_packet(decoder, &avPacket);
         if (decode_ret != 0) {
             CTX_LOG_ERRORF(doc->filepath,
-                         "(media.c) avcodec_send_packet() returned error code [%d] %s",
-                         decode_ret, av_err2str(decode_ret)
+                           "(media.c) avcodec_send_packet() returned error code [%d] %s",
+                           decode_ret, av_err2str(decode_ret)
             )
             av_frame_free(&frame);
             av_packet_unref(&avPacket);
@@ -136,6 +137,29 @@ static AVFrame *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, A
         receive_ret = avcodec_receive_frame(decoder, frame);
     }
     return frame;
+}
+
+void append_tag_meta_if_not_exists(scan_media_ctx_t *ctx, document_t *doc, AVDictionaryEntry *tag, enum metakey key) {
+
+    meta_line_t *meta = doc->meta_head;
+    while (meta != NULL) {
+        if (meta->key == key) {
+            CTX_LOG_DEBUGF(doc->filepath, "Ignoring duplicate tag: '%02x=%s' and '%02x=%s'",
+                    key, meta->str_val, key, tag->value)
+            return;
+        }
+        meta = meta->next;
+    }
+
+    text_buffer_t tex = text_buffer_create(-1);
+    text_buffer_append_string0(&tex, tag->value);
+    text_buffer_terminate_string(&tex);
+    meta_line_t *meta_tag = malloc(sizeof(meta_line_t) + tex.dyn_buffer.cur);
+    meta_tag->key = key;
+    strcpy(meta_tag->str_val, tex.dyn_buffer.buf);
+
+    APPEND_META(doc, meta_tag)
+    text_buffer_destroy(&tex);
 }
 
 #define APPEND_TAG_META(doc, tag_, keyname) \
@@ -148,16 +172,18 @@ static AVFrame *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, A
     APPEND_META(doc, meta_tag) \
     text_buffer_destroy(&tex);
 
+#define STRCPY_TOLOWER(dst, str) \
+    strncpy(dst, str, sizeof(dst)); \
+    char *ptr = dst; \
+    for (; *ptr; ++ptr) *ptr = (char) tolower(*ptr);
+
 __always_inline
 static void append_audio_meta(AVFormatContext *pFormatCtx, document_t *doc) {
 
     AVDictionaryEntry *tag = NULL;
     while ((tag = av_dict_get(pFormatCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
         char key[256];
-        strncpy(key, tag->key, sizeof(key));
-
-        char *ptr = key;
-        for (; *ptr; ++ptr) *ptr = (char) tolower(*ptr);
+        STRCPY_TOLOWER(key, tag->key)
 
         if (strcmp(key, "artist") == 0) {
             APPEND_TAG_META(doc, tag, MetaArtist)
@@ -177,7 +203,7 @@ static void append_audio_meta(AVFormatContext *pFormatCtx, document_t *doc) {
 
 __always_inline
 static void
-append_video_meta(AVFormatContext *pFormatCtx, AVFrame *frame, document_t *doc, int include_audio_tags, int is_video) {
+append_video_meta(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVFrame *frame, document_t *doc, int is_video) {
 
     if (is_video) {
         meta_line_t *meta_duration = malloc(sizeof(meta_line_t));
@@ -194,19 +220,25 @@ append_video_meta(AVFormatContext *pFormatCtx, AVFrame *frame, document_t *doc, 
     AVDictionaryEntry *tag = NULL;
     if (is_video) {
         while ((tag = av_dict_get(pFormatCtx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
-            if (include_audio_tags && strcmp(tag->key, "title") == 0) {
-                APPEND_TAG_META(doc, tag, MetaTitle)
-            } else if (strcmp(tag->key, "comment") == 0) {
-                APPEND_TAG_META(doc, tag, MetaContent)
-            } else if (include_audio_tags && strcmp(tag->key, "artist") == 0) {
-                APPEND_TAG_META(doc, tag, MetaArtist)
+            char key[256];
+            STRCPY_TOLOWER(key, tag->key)
+
+            if (strcmp(key, "title") == 0) {
+                append_tag_meta_if_not_exists(ctx, doc, tag, MetaTitle);
+            } else if (strcmp(key, "comment") == 0) {
+                append_tag_meta_if_not_exists(ctx, doc, tag, MetaContent);
+            } else if (strcmp(key, "artist") == 0) {
+                append_tag_meta_if_not_exists(ctx, doc, tag, MetaArtist);
             }
         }
     } else {
         // EXIF metadata
         while ((tag = av_dict_get(frame->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
-            if (include_audio_tags && strcmp(tag->key, "Artist") == 0) {
-                APPEND_TAG_META(doc, tag, MetaArtist)
+            char key[256];
+            STRCPY_TOLOWER(key, tag->key)
+
+            if (strcmp(key, "artist") == 0) {
+                append_tag_meta_if_not_exists(ctx, doc, tag, MetaArtist);
             } else if (strcmp(tag->key, "ImageDescription") == 0) {
                 APPEND_TAG_META(doc, tag, MetaContent)
             } else if (strcmp(tag->key, "Make") == 0) {
@@ -257,7 +289,6 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
             if (video_stream == -1) {
                 const AVCodecDescriptor *desc = avcodec_descriptor_get(stream->codecpar->codec_id);
-
 
                 if (desc != NULL) {
                     APPEND_STR_META(doc, MetaMediaVideoCodec, desc->name)
@@ -313,7 +344,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
             return;
         }
 
-        append_video_meta(pFormatCtx, frame, doc, audio_stream == -1, IS_VIDEO(pFormatCtx));
+        append_video_meta(ctx, pFormatCtx, frame, doc, IS_VIDEO(pFormatCtx));
 
         // Scale frame
         AVFrame *scaled_frame = scale_frame(decoder, frame, ctx->tn_size);
@@ -327,7 +358,8 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
         }
 
         // Encode frame to jpeg
-        AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(ctx, scaled_frame->width, scaled_frame->height, ctx->tn_qscale);
+        AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(ctx, scaled_frame->width, scaled_frame->height,
+                                                          ctx->tn_qscale);
         avcodec_send_frame(jpeg_encoder, scaled_frame);
 
         AVPacket jpeg_packet;

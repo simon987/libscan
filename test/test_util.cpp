@@ -73,7 +73,10 @@ void load_mem(void *mem, size_t size, vfile_t *f) {
 }
 
 meta_line_t *get_meta(document_t *doc, metakey key) {
-    meta_line_t *meta = doc->meta_head;
+    return get_meta_from(doc->meta_head, key);
+}
+
+meta_line_t *get_meta_from(meta_line_t *meta, metakey key) {
     while (meta != nullptr) {
         if (meta->key == key) {
             return meta;

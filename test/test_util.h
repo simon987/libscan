@@ -23,6 +23,8 @@ static void noop_store(char* key, size_t key_len, char *value, size_t value_len)
 
 meta_line_t *get_meta(document_t *doc, metakey key);
 
+meta_line_t *get_meta_from(meta_line_t *meta, metakey key);
+
 
 #define CLOSE_FILE(f) if (f.close != NULL) {f.close(&f);};
 

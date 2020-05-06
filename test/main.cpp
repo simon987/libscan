@@ -291,6 +291,28 @@ TEST(MediaVideo, Vid3Webm) {
     cleanup(&doc, &f);
 }
 
+TEST(MediaVideo, VidDuplicateTags) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/vid_tags.mkv", &f, &doc);
+
+    parse_media(&media_ctx, &f, &doc);
+
+    meta_line_t *meta_content = get_meta(&doc, MetaContent);
+    ASSERT_STREQ(meta_content->str_val, "he's got a point");
+    ASSERT_EQ(get_meta_from(meta_content->next, MetaContent), nullptr);
+
+    meta_line_t *meta_title = get_meta(&doc, MetaTitle);
+    ASSERT_STREQ(meta_title->str_val, "cool shit");
+    ASSERT_EQ(get_meta_from(meta_title->next, MetaTitle), nullptr);
+
+    meta_line_t *meta_artist = get_meta(&doc, MetaArtist);
+    ASSERT_STREQ(meta_artist->str_val, "psychicpebbles");
+    ASSERT_EQ(get_meta_from(meta_artist->next, MetaArtist), nullptr);
+
+    cleanup(&doc, &f);
+}
+
 //TODO: test music file with embedded cover art
 
 TEST(MediaAudio, MusicMp3) {
