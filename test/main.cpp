@@ -420,7 +420,23 @@ TEST(Mobi, Azw3) {
     cleanup(&doc, &f);
 }
 
+/* Arc */
+TEST(Arc, Utf8) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/arc/test1.zip", &f, &doc);
+
+    parse_archive(&arc_list_ctx, &f, &doc);
+
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "arctest/ȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬ.txt") != nullptr);
+
+    cleanup(&doc, &f);
+}
+
+
 int main(int argc, char **argv) {
+    setlocale(LC_ALL, "");
+
     arc_recurse_ctx.log = noop_log;
     arc_recurse_ctx.logf = noop_logf;
     arc_recurse_ctx.store = noop_store;

@@ -88,7 +88,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
         archive_read_support_filter_all(a);
         archive_read_support_format_all(a);
 
-        ret = archive_read_open_filename(a, doc->filepath, ARC_BUF_SIZE);
+        ret = archive_read_open_filename(a, f->filepath, ARC_BUF_SIZE);
     } else if (ctx->mode == ARC_MODE_RECURSE) {
 
         a = archive_read_new();
@@ -106,7 +106,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
     }
 
     if (ret != ARCHIVE_OK) {
-        CTX_LOG_ERRORF(doc->filepath, "(arc.c) [%d] %s", ret, archive_error_string(a))
+        CTX_LOG_ERRORF(f->filepath, "(arc.c) [%d] %s", ret, archive_error_string(a))
         archive_read_free(a);
         return SCAN_ERR_READ;
     }
@@ -118,7 +118,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             if (S_ISREG(archive_entry_stat(entry)->st_mode)) {
 
-                char *path = (char *) archive_entry_pathname(entry);
+                char *path = (char *) archive_entry_pathname_utf8(entry);
 
                 dyn_buffer_append_string(&buf, path);
                 dyn_buffer_write_char(&buf, '\n');
@@ -147,7 +147,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             sub_job->vfile.info = *archive_entry_stat(entry);
             if (S_ISREG(sub_job->vfile.info.st_mode)) {
-                sprintf(sub_job->filepath, "%s#/%s", f->filepath, archive_entry_pathname(entry));
+                sprintf(sub_job->filepath, "%s#/%s", f->filepath, archive_entry_pathname_utf8(entry));
                 sub_job->base = (int) (strrchr(sub_job->filepath, '/') - sub_job->filepath) + 1;
 
                 char *p = strrchr(sub_job->filepath, '.');
