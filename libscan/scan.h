@@ -106,6 +106,9 @@ typedef struct vfile vfile_t;
 __attribute__((warn_unused_result))
 typedef int (*read_func_t)(struct vfile *, void *buf, size_t size);
 
+__attribute__((warn_unused_result))
+typedef long (*seek_func_t)(struct vfile *, long offset, int whence);
+
 typedef void (*close_func_t)(struct vfile *);
 
 typedef void (*reset_func_t)(struct vfile *);
@@ -122,6 +125,7 @@ typedef struct vfile {
     struct stat info;
 
     read_func_t read;
+    seek_func_t seek;
     close_func_t close;
     reset_func_t reset;
 } vfile_t;

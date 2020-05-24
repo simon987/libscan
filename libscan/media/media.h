@@ -11,6 +11,7 @@ typedef struct {
     log_callback_t log;
     logf_callback_t logf;
     store_callback_t store;
+    long max_media_buffer;
 } scan_media_ctx_t;
 
 void parse_media(scan_media_ctx_t *ctx, vfile_t *f, document_t *doc);

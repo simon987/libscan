@@ -11,7 +11,7 @@ extern "C" {
 #include <libavutil/avutil.h>
 }
 
-static scan_arc_ctx_t arc_recurse_ctx;
+static scan_arc_ctx_t arc_recurse_media_ctx;
 static scan_arc_ctx_t arc_list_ctx;
 
 static scan_text_ctx_t text_500_ctx;
@@ -24,6 +24,13 @@ static scan_media_ctx_t media_ctx;
 static scan_ooxml_ctx_t ooxml_500_ctx;
 
 static scan_mobi_ctx_t mobi_500_ctx;
+
+
+document_t LastSubDoc;
+
+void _parse_media(parse_job_t *job) {
+    parse_media(&media_ctx, &job->vfile, &LastSubDoc);
+}
 
 
 /* Text */
@@ -291,6 +298,21 @@ TEST(MediaVideo, Vid3Webm) {
     cleanup(&doc, &f);
 }
 
+TEST(MediaVideoVfile, Vid3Ogv) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/arc/vid3.tar", &f, &doc);
+
+    parse_archive(&arc_recurse_media_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&LastSubDoc, MetaMediaVideoCodec)->str_val, "theora");
+    ASSERT_EQ(get_meta(&LastSubDoc, MetaMediaBitrate)->long_val, 590261);
+    ASSERT_EQ(get_meta(&LastSubDoc, MetaMediaDuration)->long_val, 10);
+
+    //TODO: Check that thumbnail was generated correctly
+    cleanup(&doc, &f);
+}
+
 TEST(MediaVideo, VidDuplicateTags) {
     vfile_t f;
     document_t doc;
@@ -437,11 +459,11 @@ TEST(Arc, Utf8) {
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
 
-    arc_recurse_ctx.log = noop_log;
-    arc_recurse_ctx.logf = noop_logf;
-    arc_recurse_ctx.store = noop_store;
-    arc_recurse_ctx.mode = ARC_MODE_RECURSE;
-    arc_recurse_ctx.parse = nullptr; //TODO
+    arc_recurse_media_ctx.log = noop_log;
+    arc_recurse_media_ctx.logf = noop_logf;
+    arc_recurse_media_ctx.store = noop_store;
+    arc_recurse_media_ctx.mode = ARC_MODE_RECURSE;
+    arc_recurse_media_ctx.parse = _parse_media;
 
     arc_list_ctx.log = noop_log;
     arc_list_ctx.logf = noop_logf;
@@ -468,6 +490,7 @@ int main(int argc, char **argv) {
     media_ctx.store = noop_store;
     media_ctx.tn_size = 500;
     media_ctx.tn_qscale = 1.0;
+    media_ctx.max_media_buffer = (long)2000 * 1024 * 1024;
 
     ooxml_500_ctx.content_size = 500;
     ooxml_500_ctx.log = noop_log;

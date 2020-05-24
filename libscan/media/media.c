@@ -145,7 +145,7 @@ void append_tag_meta_if_not_exists(scan_media_ctx_t *ctx, document_t *doc, AVDic
     while (meta != NULL) {
         if (meta->key == key) {
             CTX_LOG_DEBUGF(doc->filepath, "Ignoring duplicate tag: '%02x=%s' and '%02x=%s'",
-                    key, meta->str_val, key, tag->value)
+                           key, meta->str_val, key, tag->value)
             return;
         }
         meta = meta->next;
@@ -400,7 +400,6 @@ void parse_media_filename(scan_media_ctx_t *ctx, const char *filepath, document_
     parse_media_format_ctx(ctx, pFormatCtx, doc);
 }
 
-
 int vfile_read(void *ptr, uint8_t *buf, int buf_size) {
     struct vfile *f = ptr;
 
@@ -412,6 +411,48 @@ int vfile_read(void *ptr, uint8_t *buf, int buf_size) {
     return ret;
 }
 
+typedef struct {
+    struct stat info;
+    FILE *file;
+    void *buf;
+} memfile_t;
+
+int memfile_read(void *ptr, uint8_t *buf, int buf_size) {
+    memfile_t *mem = ptr;
+    return (int) fread(buf, 1, buf_size, mem->file);
+}
+
+long memfile_seek(void *ptr, long offset, int whence) {
+    memfile_t *mem = ptr;
+
+    if (whence == 0x10000) {
+        return mem->info.st_size;
+    }
+
+    return fseek(mem->file, offset, whence);
+}
+
+int memfile_open(vfile_t *f, memfile_t *mem) {
+    mem->info = f->info;
+
+    mem->buf = malloc(mem->info.st_size);
+    if (mem->buf == NULL) {
+        return -1;
+    }
+
+    int ret = f->read(f, mem->buf, mem->info.st_size);
+    mem->file = fmemopen(mem->buf, mem->info.st_size, "rb");
+
+    return ret == mem->info.st_size ? 0 : -1;
+}
+
+void memfile_close(memfile_t *mem) {
+    if (mem->buf != NULL) {
+        free(mem->buf);
+        fclose(mem->file);
+    }
+}
+
 void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) {
 
     AVFormatContext *pFormatCtx = avformat_alloc_context();
@@ -421,15 +462,29 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
     }
 
     unsigned char *buffer = (unsigned char *) av_malloc(AVIO_BUF_SIZE);
-    AVIOContext *io_ctx = avio_alloc_context(buffer, AVIO_BUF_SIZE, 0, f, vfile_read, NULL, NULL);
+    AVIOContext *io_ctx = NULL;
+    memfile_t memfile = {{}, 0, 0};
+
+    if (f->info.st_size <= ctx->max_media_buffer) {
+        int ret = memfile_open(f, &memfile);
+        if (ret == 0) {
+            CTX_LOG_DEBUGF(f->filepath, "Loading media file in memory (%ldB)", f->info.st_size)
+            io_ctx = avio_alloc_context(buffer, AVIO_BUF_SIZE, 0, &memfile, memfile_read, NULL, memfile_seek);
+        }
+    }
+
+    if (io_ctx == NULL) {
+        CTX_LOG_DEBUGF(f->filepath, "Reading media file without seek support", f->info.st_size)
+        io_ctx = avio_alloc_context(buffer, AVIO_BUF_SIZE, 0, f, vfile_read, NULL, NULL);
+    }
 
     pFormatCtx->pb = io_ctx;
-    pFormatCtx->flags |= AVFMT_FLAG_CUSTOM_IO;
 
     int res = avformat_open_input(&pFormatCtx, "", NULL, NULL);
     if (res == -5) {
         // Tried to parse media that requires seek
         av_free(io_ctx->buffer);
+        memfile_close(&memfile);
         avio_context_free(&io_ctx);
         avformat_close_input(&pFormatCtx);
         avformat_free_context(pFormatCtx);
@@ -437,6 +492,7 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
     } else if (res < 0) {
         CTX_LOG_ERRORF(doc->filepath, "(media.c) avformat_open_input() returned [%d] %s", res, av_err2str(res))
         av_free(io_ctx->buffer);
+        memfile_close(&memfile);
         avio_context_free(&io_ctx);
         avformat_close_input(&pFormatCtx);
         avformat_free_context(pFormatCtx);
@@ -446,6 +502,7 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
     parse_media_format_ctx(ctx, pFormatCtx, doc);
     av_free(io_ctx->buffer);
     avio_context_free(&io_ctx);
+    memfile_close(&memfile);
 }
 
 void parse_media(scan_media_ctx_t *ctx, vfile_t *f, document_t *doc) {
