@@ -121,7 +121,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
                 char *path = (char *) archive_entry_pathname_utf8(entry);
 
                 dyn_buffer_append_string(&buf, path);
-                dyn_buffer_write_char(&buf, '\n');
+                dyn_buffer_write_char(&buf, ' ');
             }
         }
         dyn_buffer_write_char(&buf, '\0');
