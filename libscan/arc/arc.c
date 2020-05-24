@@ -17,6 +17,10 @@ int should_parse_filtered_file(const char *filepath, int ext) {
         return FALSE;
     }
 
+    if (strncmp(filepath + ext, "tgz", 3) == 0) {
+        return TRUE;
+    }
+
     memcpy(tmp, filepath, ext - 1);
     *(tmp + ext - 1) = '\0';
 
@@ -147,7 +151,14 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             sub_job->vfile.info = *archive_entry_stat(entry);
             if (S_ISREG(sub_job->vfile.info.st_mode)) {
-                sprintf(sub_job->filepath, "%s#/%s", f->filepath, archive_entry_pathname_utf8(entry));
+
+                const char* utf8_name = archive_entry_pathname_utf8(entry);
+
+                if (utf8_name == NULL) {
+                    sprintf(sub_job->filepath, "%s#/%s", f->filepath, archive_entry_pathname(entry));
+                } else {
+                    sprintf(sub_job->filepath, "%s#/%s", f->filepath, utf8_name);
+                }
                 sub_job->base = (int) (strrchr(sub_job->filepath, '/') - sub_job->filepath) + 1;
 
                 char *p = strrchr(sub_job->filepath, '.');
