@@ -65,7 +65,7 @@ AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int si
     struct SwsContext *sws_ctx = sws_getContext(
             decoder->width, decoder->height, decoder->pix_fmt,
             dstW, dstH, AV_PIX_FMT_YUVJ420P,
-            SWS_FAST_BILINEAR, 0, 0, 0
+            SIST_SWS_ALGO, 0, 0, 0
     );
 
     int dst_buf_len = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, dstW, dstH, 1);

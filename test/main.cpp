@@ -8,6 +8,7 @@ extern "C" {
 #include "../libscan/media/media.h"
 #include "../libscan/ooxml/ooxml.h"
 #include "../libscan/mobi/scan_mobi.h"
+#include "../libscan/raw/raw.h"
 #include <libavutil/avutil.h>
 }
 
@@ -24,6 +25,8 @@ static scan_media_ctx_t media_ctx;
 static scan_ooxml_ctx_t ooxml_500_ctx;
 
 static scan_mobi_ctx_t mobi_500_ctx;
+
+static scan_raw_ctx_t raw_ctx;
 
 
 document_t LastSubDoc;
@@ -455,6 +458,92 @@ TEST(Arc, Utf8) {
     cleanup(&doc, &f);
 }
 
+/* RAW */
+TEST(RAW, Panasonic) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/raw/Panasonic.RW2", &f, &doc);
+
+    parse_raw(&raw_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "raw");
+    ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "DMC-GX8");
+    ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "Panasonic");
+    ASSERT_STREQ(get_meta(&doc, MetaExifIsoSpeedRatings)->str_val, "640");
+    ASSERT_STREQ(get_meta(&doc, MetaExifDateTime)->str_val, "2020:07:20 10:00:34");
+    ASSERT_STREQ(get_meta(&doc, MetaExifFocalLength)->str_val, "20.0");
+    ASSERT_STREQ(get_meta(&doc, MetaExifFNumber)->str_val, "2.0");
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 5200);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 3904);
+
+
+    cleanup(&doc, &f);
+}
+
+TEST(RAW, Nikon) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/raw/Nikon.NEF", &f, &doc);
+
+    parse_raw(&raw_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "raw");
+    ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "D750");
+    ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "Nikon");
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 6032);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 4032);
+
+    cleanup(&doc, &f);
+}
+
+TEST(RAW, Sony) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/raw/Sony.ARW", &f, &doc);
+
+    parse_raw(&raw_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "raw");
+    ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "ILCE-7RM3");
+    ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "Sony");
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 7968);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 5320);
+
+    cleanup(&doc, &f);
+}
+
+TEST(RAW, Olympus) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/raw/Olympus.ORF", &f, &doc);
+
+    parse_raw(&raw_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "raw");
+    ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "E-M5MarkII");
+    ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "Olympus");
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 4640);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 3472);
+
+    cleanup(&doc, &f);
+}
+
+TEST(RAW, Fuji) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/raw/Fuji.RAF", &f, &doc);
+
+    parse_raw(&raw_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "raw");
+    ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "X-T2");
+    ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "Fujifilm");
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 6032);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 4028);
+
+    cleanup(&doc, &f);
+}
+
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
@@ -499,6 +588,12 @@ int main(int argc, char **argv) {
     mobi_500_ctx.content_size = 500;
     mobi_500_ctx.log = noop_log;
     mobi_500_ctx.logf = noop_logf;
+
+    raw_ctx.log = noop_log;
+    raw_ctx.logf = noop_logf;
+    raw_ctx.store = noop_store;
+    raw_ctx.tn_size = 500;
+    raw_ctx.tn_qscale = 5.0;
 
     av_log_set_level(AV_LOG_QUIET);
     ::testing::InitGoogleTest(&argc, argv);

@@ -7,6 +7,8 @@
 
 #include "macros.h"
 
+#define SIST_SWS_ALGO SWS_LANCZOS
+
 #define META_INT_MASK 0x80
 #define META_STR_MASK 0x40
 #define META_LONG_MASK 0x20

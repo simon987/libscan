@@ -20,7 +20,7 @@ add_library(
         libscan/font/font.c libscan/font/font.h
 
         third-party/utf8.h
-        libscan/mobi/scan_mobi.c libscan/mobi/scan_mobi.h)
+        libscan/mobi/scan_mobi.c libscan/mobi/scan_mobi.h libscan/raw/raw.c libscan/raw/raw.h)
 set_target_properties(scan PROPERTIES LINKER_LANGUAGE C)
 
 set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
@@ -44,6 +44,9 @@ find_library(JBIG2DEC_LIB NAMES jbig2decd jbig2dec)
 find_library(HARFBUZZ_LIB NAMES harfbuzz harfbuzzd)
 find_library(FREETYPE_LIB NAMES freetype freetyped)
 find_library(LZO2_LIB NAMES lzo2)
+
+find_library(CMS_LIB NAMES lcms)
+find_library(JAS_LIB NAMES jasper)
 
 
 target_compile_options(
@@ -146,6 +149,11 @@ target_link_libraries(
         z
 
         ${CMAKE_THREAD_LIBS_INIT}
+
+        raw
+        -fopenmp
+        ${CMS_LIB}
+        ${JAS_LIB}
 )
 
 target_include_directories(
