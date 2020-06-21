@@ -9,7 +9,6 @@
 #include "libavcodec/avcodec.h"
 #include "libavutil/imgutils.h"
 
-#include <fcntl.h>
 
 
 __always_inline
@@ -94,6 +93,10 @@ void parse_raw(scan_raw_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     snprintf(tmp, sizeof(tmp), "%.1f", libraw_lib->other.aperture);
     APPEND_STR_META(doc, MetaExifFNumber, tmp)
+
+    int denominator = (int)roundf(1 / libraw_lib->other.shutter);
+    snprintf(tmp, sizeof(tmp), "1/%d", denominator);
+    APPEND_STR_META(doc, MetaExifExposureTime, tmp)
 
     APPEND_STR_META(doc, MetaMediaVideoCodec, "raw")
 
