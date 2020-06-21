@@ -23,7 +23,7 @@ add_library(
         libscan/mobi/scan_mobi.c libscan/mobi/scan_mobi.h libscan/raw/raw.c libscan/raw/raw.h)
 set_target_properties(scan PROPERTIES LINKER_LANGUAGE C)
 
-set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
+set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib .so)
 target_link_directories(scan PUBLIC /usr/share/vcpkg/installed/x64-linux/lib/)
 
 find_package(LibArchive REQUIRED)
@@ -47,6 +47,7 @@ find_library(LZO2_LIB NAMES lzo2)
 
 find_library(CMS_LIB NAMES lcms)
 find_library(JAS_LIB NAMES jasper)
+find_library(GOMP_LIB NAMES libgomp.a gomp PATHS /usr/lib/gcc/x86_64-linux-gnu/5/)
 
 
 target_compile_options(
@@ -151,9 +152,10 @@ target_link_libraries(
         ${CMAKE_THREAD_LIBS_INIT}
 
         raw
-        -fopenmp
+        ${GOMP_LIB}
         ${CMS_LIB}
         ${JAS_LIB}
+        dl
 )
 
 target_include_directories(
