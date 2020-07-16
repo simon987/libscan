@@ -388,6 +388,21 @@ TEST(Ooxml, Docx1) {
     cleanup(&doc, &f);
 }
 
+TEST(Ooxml, Docx2Thumbnail) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ooxml/embed_tn.docx", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_ooxml(&ooxml_500_ctx, &f, &doc);
+
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
+    ASSERT_NE(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
 TEST(Ooxml, Xlsx1) {
     vfile_t f;
     document_t doc;
@@ -550,13 +565,13 @@ int main(int argc, char **argv) {
 
     arc_recurse_media_ctx.log = noop_log;
     arc_recurse_media_ctx.logf = noop_logf;
-    arc_recurse_media_ctx.store = noop_store;
+    arc_recurse_media_ctx.store = counter_store;
     arc_recurse_media_ctx.mode = ARC_MODE_RECURSE;
     arc_recurse_media_ctx.parse = _parse_media;
 
     arc_list_ctx.log = noop_log;
     arc_list_ctx.logf = noop_logf;
-    arc_list_ctx.store = noop_store;
+    arc_list_ctx.store = counter_store;
     arc_list_ctx.mode = ARC_MODE_LIST;
 
     text_500_ctx.content_size = 500;
@@ -564,7 +579,7 @@ int main(int argc, char **argv) {
     text_500_ctx.logf = noop_logf;
 
     ebook_ctx.content_size = 999999999999;
-    ebook_ctx.store = noop_store;
+    ebook_ctx.store = counter_store;
     ebook_ctx.tesseract_lang = "eng";
     ebook_ctx.tesseract_path = "./tessdata";
     ebook_ctx.tn_size = 500;
@@ -576,7 +591,7 @@ int main(int argc, char **argv) {
 
     media_ctx.log = noop_log;
     media_ctx.logf = noop_logf;
-    media_ctx.store = noop_store;
+    media_ctx.store = counter_store;
     media_ctx.tn_size = 500;
     media_ctx.tn_qscale = 1.0;
     media_ctx.max_media_buffer = (long)2000 * 1024 * 1024;
@@ -584,6 +599,7 @@ int main(int argc, char **argv) {
     ooxml_500_ctx.content_size = 500;
     ooxml_500_ctx.log = noop_log;
     ooxml_500_ctx.logf = noop_logf;
+    ooxml_500_ctx.store = counter_store;
 
     mobi_500_ctx.content_size = 500;
     mobi_500_ctx.log = noop_log;
@@ -591,7 +607,7 @@ int main(int argc, char **argv) {
 
     raw_ctx.log = noop_log;
     raw_ctx.logf = noop_logf;
-    raw_ctx.store = noop_store;
+    raw_ctx.store = counter_store;
     raw_ctx.tn_size = 500;
     raw_ctx.tn_qscale = 5.0;
 

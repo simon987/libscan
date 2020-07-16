@@ -145,6 +145,23 @@ static int read_doc_props(scan_ooxml_ctx_t *ctx, struct archive *a, text_buffer_
     return 0;
 }
 
+#define MAX_TN_SIZE 1024 * 1024 * 15
+
+void read_thumbnail(scan_ooxml_ctx_t *ctx, document_t *doc, struct archive *a, struct archive_entry *entry) {
+    size_t entry_size = archive_entry_size(entry);
+
+    if (entry_size <= 0 || entry_size > MAX_TN_SIZE) {
+        return;
+    }
+
+    char* buf = malloc(entry_size);
+    archive_read_data(a, buf, entry_size);
+
+    APPEND_TN_META(doc, 1, 1) // Size unknown
+    ctx->store((char *) doc->uuid, sizeof(doc->uuid), buf, entry_size);
+    free(buf);
+}
+
 void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     size_t buf_len;
@@ -180,6 +197,8 @@ void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
                 if (read_doc_props(ctx, a, &tex, doc) != 0) {
                     break;
                 }
+            } else if (strcmp(path, "docProps/thumbnail.jpeg") == 0) {
+                read_thumbnail(ctx, doc, a, entry);
             }
         }
     }

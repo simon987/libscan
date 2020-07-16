@@ -53,7 +53,6 @@ find_library(GOMP_LIB NAMES libgomp.a gomp PATHS /usr/lib/gcc/x86_64-linux-gnu/5
 target_compile_options(
         scan
         PRIVATE
-        -Werror
         -g
 )
 

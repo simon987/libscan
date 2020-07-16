@@ -17,8 +17,10 @@ static void noop_log(const char *filepath, int level, char *str) {
     // noop
 }
 
-static void noop_store(char* key, size_t key_len, char *value, size_t value_len) {
-    // noop
+static size_t store_size = 0;
+
+static void counter_store(char* key, size_t key_len, char *value, size_t value_len) {
+    store_size += value_len;
 }
 
 meta_line_t *get_meta(document_t *doc, metakey key);
