@@ -1,6 +1,7 @@
 #include "scan_mobi.h"
 
 #include <mobi.h>
+#include <errno.h>
 #include "stdlib.h"
 
 void parse_mobi(scan_mobi_ctx_t *ctx, vfile_t *f, document_t *doc) {
@@ -18,7 +19,7 @@ void parse_mobi(scan_mobi_ctx_t *ctx, vfile_t *f, document_t *doc) {
     if (file == NULL) {
         mobi_free(m);
         free(buf);
-        CTX_LOG_ERRORF(f->filepath, "fmemopen() failed: %d", ferror(file))
+        CTX_LOG_ERRORF(f->filepath, "fmemopen() failed (%d)", errno)
         return;
     }
 

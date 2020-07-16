@@ -102,7 +102,9 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
 
 void fz_err_callback(void *user, const char *message) {
     document_t *doc = (document_t *) user;
-    thread_ctx.logf(doc->filepath, LEVEL_WARNING,"FZ: %s", message);
+
+    const scan_ebook_ctx_t *ctx = &thread_ctx;
+    CTX_LOG_WARNINGF(doc->filepath, "FZ: %s", message);
 }
 
 static void init_fzctx(fz_context *fzctx, document_t *doc) {
