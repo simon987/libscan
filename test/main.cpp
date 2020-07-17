@@ -5,6 +5,7 @@ extern "C" {
 #include "../libscan/arc/arc.h"
 #include "../libscan/text/text.h"
 #include "../libscan/ebook/ebook.h"
+#include "../libscan/comic/comic.h"
 #include "../libscan/media/media.h"
 #include "../libscan/ooxml/ooxml.h"
 #include "../libscan/mobi/scan_mobi.h"
@@ -19,6 +20,8 @@ static scan_text_ctx_t text_500_ctx;
 
 static scan_ebook_ctx_t ebook_ctx;
 static scan_ebook_ctx_t ebook_500_ctx;
+
+static scan_comic_ctx_t comic_ctx;
 
 static scan_media_ctx_t media_ctx;
 
@@ -203,25 +206,32 @@ TEST(Ebook, Epub1) {
     cleanup(&doc, &f);
 }
 
-TEST(Ebook, ComicCbz) {
+/* Comic */
+TEST(Comic, ComicCbz) {
     vfile_t f;
     document_t doc;
     load_doc_file("libscan-test-files/test_files/ebook/lost_treasure.cbz", &f, &doc);
 
-    parse_ebook(&ebook_500_ctx, &f, "application/vnd.comicbook+zip", &doc);
+    size_t size_before = store_size;
 
-    //TODO: Check that thumbnail was generated correctly
+    parse_comic(&comic_ctx, &f, &doc);
+
+    ASSERT_NE(size_before, store_size);
+
     cleanup(&doc, &f);
 }
 
-TEST(Ebook, ComicCbr) {
+TEST(Comic, ComicCbr) {
     vfile_t f;
     document_t doc;
     load_doc_file("libscan-test-files/test_files/ebook/laugh.cbr", &f, &doc);
 
-    parse_ebook(&ebook_500_ctx, &f, "application/vnd.comicbook-rar", &doc);
+    size_t size_before = store_size;
 
-    //TODO: Check that thumbnail was generated correctly
+    parse_comic(&comic_ctx, &f, &doc);
+
+    ASSERT_NE(size_before, store_size);
+
     cleanup(&doc, &f);
 }
 
@@ -588,6 +598,12 @@ int main(int argc, char **argv) {
 
     ebook_500_ctx = ebook_ctx;
     ebook_500_ctx.content_size = 500;
+
+    comic_ctx.tn_qscale = 1.0;
+    comic_ctx.tn_size = 500;
+    comic_ctx.log = noop_log;
+    comic_ctx.logf = noop_logf;
+    comic_ctx.store = counter_store;
 
     media_ctx.log = noop_log;
     media_ctx.logf = noop_logf;

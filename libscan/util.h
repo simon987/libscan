@@ -117,12 +117,12 @@ static void dyn_buffer_write_char(dyn_buffer_t *buf, char c) {
     buf->cur += sizeof(c);
 }
 
-static void dyn_buffer_write_str(dyn_buffer_t *buf, char *str) {
+static void dyn_buffer_write_str(dyn_buffer_t *buf, const char *str) {
     dyn_buffer_write(buf, str, strlen(str));
     dyn_buffer_write_char(buf, '\0');
 }
 
-static void dyn_buffer_append_string(dyn_buffer_t *buf, char *str) {
+static void dyn_buffer_append_string(dyn_buffer_t *buf, const char *str) {
     dyn_buffer_write(buf, str, strlen(str));
 }
 

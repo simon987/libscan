@@ -40,6 +40,10 @@ static AVCodecContext *alloc_jpeg_encoder(scan_media_ctx_t *ctx, int dstW, int d
 __always_inline
 AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int size) {
 
+    if (frame->pict_type == AV_PICTURE_TYPE_NONE) {
+        return NULL;
+    }
+
     int dstW;
     int dstH;
     if (frame->width <= size && frame->height <= size) {
@@ -443,7 +447,16 @@ int memfile_open(vfile_t *f, memfile_t *mem) {
     int ret = f->read(f, mem->buf, mem->info.st_size);
     mem->file = fmemopen(mem->buf, mem->info.st_size, "rb");
 
-    return ret == mem->info.st_size ? 0 : -1;
+    return (ret == mem->info.st_size && mem->file != NULL) ? 0 : -1;
+}
+
+int memfile_open_buf(void *buf, size_t buf_len, memfile_t *mem) {
+    mem->info.st_size = buf_len;
+
+    mem->buf = buf;
+    mem->file = fmemopen(mem->buf, mem->info.st_size, "rb");
+
+    return mem->file != NULL ? 0 : -1;
 }
 
 void memfile_close(memfile_t *mem) {
@@ -516,4 +529,103 @@ void parse_media(scan_media_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
 void init_media() {
     av_log_set_level(AV_LOG_QUIET);
+}
+
+int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, document_t *doc) {
+    memfile_t memfile;
+    AVIOContext *io_ctx = NULL;
+
+    AVFormatContext *pFormatCtx = avformat_alloc_context();
+    if (pFormatCtx == NULL) {
+        CTX_LOG_ERROR(doc->filepath, "(media.c) Could not allocate context with avformat_alloc_context()")
+        return FALSE;
+    }
+
+    unsigned char *buffer = (unsigned char *) av_malloc(AVIO_BUF_SIZE);
+
+    int ret = memfile_open_buf(buf, buf_len, &memfile);
+    if (ret == 0) {
+        CTX_LOG_DEBUGF(doc->filepath, "Loading media file in memory (%ldB)", buf_len)
+        io_ctx = avio_alloc_context(buffer, AVIO_BUF_SIZE, 0, &memfile, memfile_read, NULL, memfile_seek);
+    } else {
+        avformat_close_input(&pFormatCtx);
+        avformat_free_context(pFormatCtx);
+        av_free(io_ctx->buffer);
+        avio_context_free(&io_ctx);
+        fclose(memfile.file);
+        return FALSE;
+    }
+
+    pFormatCtx->pb = io_ctx;
+
+    int res = avformat_open_input(&pFormatCtx, "", NULL, NULL);
+    if (res != 0) {
+        av_free(io_ctx->buffer);
+        avformat_close_input(&pFormatCtx);
+        avformat_free_context(pFormatCtx);
+        avio_context_free(&io_ctx);
+        fclose(memfile.file);
+        return FALSE;
+    }
+
+    AVStream *stream = pFormatCtx->streams[0];
+
+    // Decoder
+    AVCodec *video_codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    AVCodecContext *decoder = avcodec_alloc_context3(video_codec);
+    avcodec_parameters_to_context(decoder, stream->codecpar);
+    avcodec_open2(decoder, video_codec, NULL);
+
+    AVFrame *frame = read_frame(ctx, pFormatCtx, decoder, 0, doc);
+    if (frame == NULL) {
+        avcodec_free_context(&decoder);
+        avformat_close_input(&pFormatCtx);
+        avformat_free_context(pFormatCtx);
+        av_free(io_ctx->buffer);
+        avio_context_free(&io_ctx);
+        fclose(memfile.file);
+        return FALSE;
+    }
+
+    // Scale frame
+    AVFrame *scaled_frame = scale_frame(decoder, frame, ctx->tn_size);
+
+    if (scaled_frame == NULL) {
+        av_frame_free(&frame);
+        avcodec_free_context(&decoder);
+        avformat_close_input(&pFormatCtx);
+        avformat_free_context(pFormatCtx);
+        av_free(io_ctx->buffer);
+        avio_context_free(&io_ctx);
+        fclose(memfile.file);
+        return FALSE;
+    }
+
+    // Encode frame to jpeg
+    AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(ctx, scaled_frame->width, scaled_frame->height, ctx->tn_qscale);
+    avcodec_send_frame(jpeg_encoder, scaled_frame);
+
+    AVPacket jpeg_packet;
+    av_init_packet(&jpeg_packet);
+    avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
+
+    // Save thumbnail
+    APPEND_TN_META(doc, scaled_frame->width, scaled_frame->height)
+    ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
+
+    av_packet_unref(&jpeg_packet);
+    av_frame_free(&frame);
+    av_free(*scaled_frame->data);
+    av_frame_free(&scaled_frame);
+    avcodec_free_context(&jpeg_encoder);
+    avcodec_free_context(&decoder);
+
+    avformat_close_input(&pFormatCtx);
+    avformat_free_context(pFormatCtx);
+
+    av_free(io_ctx->buffer);
+    avio_context_free(&io_ctx);
+    fclose(memfile.file);
+
+    return TRUE;
 }

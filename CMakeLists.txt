@@ -14,7 +14,7 @@ add_library(
         libscan/text/text.c libscan/text/text.h
         libscan/arc/arc.c libscan/arc/arc.h
         libscan/ebook/ebook.c libscan/ebook/ebook.h
-        libscan/cbr/cbr.c libscan/cbr/cbr.h
+        libscan/comic/comic.c libscan/comic/comic.h
         libscan/ooxml/ooxml.c libscan/ooxml/ooxml.h
         libscan/media/media.c libscan/media/media.h
         libscan/font/font.c libscan/font/font.h
