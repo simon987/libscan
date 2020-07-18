@@ -1,8 +1,9 @@
 #include "ebook.h"
-#include "../util.h"
 #include <mupdf/fitz.h>
 #include <pthread.h>
 #include <tesseract/capi.h>
+
+#include "../media/media.h"
 
 #define MIN_OCR_SIZE 350
 #define MIN_OCR_LEN 10
@@ -71,31 +72,60 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
         return -1;
     }
 
-    fz_buffer *fzbuf = NULL;
-    fz_var(fzbuf);
-    fz_var(err);
-
-    fz_try(fzctx)
-        fzbuf = fz_new_buffer_from_pixmap_as_png(fzctx, pixmap, fz_default_color_params);
-    fz_catch(fzctx)
-        err = fzctx->error.errcode;
-
-    if (err == 0) {
-        unsigned char *tn_buf;
-        size_t tn_len = fz_buffer_storage(fzctx, fzbuf, &tn_buf);
-        APPEND_TN_META(doc, pixmap->x, pixmap->y)
-        ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) tn_buf, tn_len);
-    }
-
-    fz_drop_buffer(fzctx, fzbuf);
-    fz_drop_pixmap(fzctx, pixmap);
-    fz_drop_page(fzctx, cover);
-
-    if (err != 0) {
-        CTX_LOG_WARNINGF(doc->filepath, "fz_new_buffer_from_pixmap_as_png() returned error code [%d] %s", err,
-                     fzctx->error.message)
+    if (pixmap->n != 3) {
+        CTX_LOG_ERRORF(doc->filepath, "Got unexpected pixmap depth: %d", pixmap->n)
+        fz_drop_page(fzctx, cover);
+        fz_drop_pixmap(fzctx, pixmap);
         return -1;
     }
+
+    // RGB24 -> YUV420p
+    AVFrame *scaled_frame = av_frame_alloc();
+
+    struct SwsContext *sws_ctx= sws_getContext(
+            pixmap->w, pixmap->h, AV_PIX_FMT_RGB24,
+            pixmap->w, pixmap->h, AV_PIX_FMT_YUVJ420P,
+            SIST_SWS_ALGO, 0, 0, 0
+    );
+
+    int dst_buf_len = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, pixmap->w, pixmap->h, 1);
+    uint8_t *dst_buf = (uint8_t *) av_malloc(dst_buf_len);
+
+    av_image_fill_arrays(scaled_frame->data, scaled_frame->linesize, dst_buf, AV_PIX_FMT_YUV420P, pixmap->w, pixmap->h, 1);
+
+    const uint8_t *in_data[1] = {pixmap->samples};
+    int in_line_size[1] = {3 * pixmap->w};
+
+    sws_scale(sws_ctx,
+              in_data, in_line_size,
+              0, pixmap->h,
+              scaled_frame->data, scaled_frame->linesize
+    );
+
+    scaled_frame->width = pixmap->w;
+    scaled_frame->height = pixmap->h;
+    scaled_frame->format = AV_PIX_FMT_YUV420P;
+
+    sws_freeContext(sws_ctx);
+
+    // YUV420p -> JPEG
+    AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(pixmap->w, pixmap->h, 1.0f);
+    avcodec_send_frame(jpeg_encoder, scaled_frame);
+
+    AVPacket jpeg_packet;
+    av_init_packet(&jpeg_packet);
+    avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
+
+    APPEND_TN_META(doc, pixmap->w, pixmap->h)
+    ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
+
+    av_packet_unref(&jpeg_packet);
+    av_free(*scaled_frame->data);
+    av_frame_free(&scaled_frame);
+    avcodec_free_context(&jpeg_encoder);
+
+    fz_drop_pixmap(fzctx, pixmap);
+    fz_drop_page(fzctx, cover);
 
     return 0;
 }

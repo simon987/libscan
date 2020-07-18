@@ -2,11 +2,6 @@
 
 #include "../util.h"
 
-#include "libavformat/avformat.h"
-#include "libswscale/swscale.h"
-#include "libswresample/swresample.h"
-#include "libavcodec/avcodec.h"
-#include "libavutil/imgutils.h"
 
 #include <ctype.h>
 
@@ -14,28 +9,6 @@
 #define AVIO_BUF_SIZE 8192
 #define IS_VIDEO(fmt) (fmt->iformat->name && strcmp(fmt->iformat->name, "image2") != 0)
 
-
-__always_inline
-static AVCodecContext *alloc_jpeg_encoder(scan_media_ctx_t *ctx, int dstW, int dstH, float qscale) {
-
-    AVCodec *jpeg_codec = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
-    AVCodecContext *jpeg = avcodec_alloc_context3(jpeg_codec);
-    jpeg->width = dstW;
-    jpeg->height = dstH;
-    jpeg->time_base.den = 1000000;
-    jpeg->time_base.num = 1;
-    jpeg->i_quant_factor = qscale;
-
-    jpeg->pix_fmt = AV_PIX_FMT_YUVJ420P;
-    int ret = avcodec_open2(jpeg, jpeg_codec, NULL);
-
-    if (ret != 0) {
-        CTX_LOG_WARNINGF("media.c", "Could not open jpeg encoder: %s!\n", av_err2str(ret));
-        return NULL;
-    }
-
-    return jpeg;
-}
 
 __always_inline
 AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int size) {
@@ -362,7 +335,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
         }
 
         // Encode frame to jpeg
-        AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(ctx, scaled_frame->width, scaled_frame->height,
+        AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height,
                                                           ctx->tn_qscale);
         avcodec_send_frame(jpeg_encoder, scaled_frame);
 
@@ -602,7 +575,7 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, docu
     }
 
     // Encode frame to jpeg
-    AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(ctx, scaled_frame->width, scaled_frame->height, ctx->tn_qscale);
+    AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height, ctx->tn_qscale);
     avcodec_send_frame(jpeg_encoder, scaled_frame);
 
     AVPacket jpeg_packet;

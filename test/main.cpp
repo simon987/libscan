@@ -174,12 +174,16 @@ TEST(Ebook, CandlePdf) {
     document_t doc;
     load_doc_file("libscan-test-files/test_files/ebook/General_-_Candle_Making.pdf", &f, &doc);
 
+    size_t size_before = store_size;
+
     parse_ebook(&ebook_500_ctx, &f, "application/pdf", &doc);
 
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Microsoft Word - A531 Candlemaking-01.doc");
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Dafydd Prichard");
     ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
     ASSERT_NE(get_meta(&doc, MetaContent)->str_val[0], ' ');
+    ASSERT_NE(size_before, store_size);
+
     cleanup(&doc, &f);
 }
 
