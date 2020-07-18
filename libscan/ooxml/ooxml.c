@@ -186,7 +186,7 @@ void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
         if (S_ISREG(archive_entry_stat(entry)->st_mode)) {
             const char *path = archive_entry_pathname(entry);
 
-            if (!buffer_full && should_read_part(path)) {
+            if (!buffer_full && should_read_part(path) && ctx->content_size > 0) {
                 ret = read_part(ctx, a, &tex, doc);
                 if (ret == READ_PART_ERR) {
                     break;
