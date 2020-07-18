@@ -137,12 +137,19 @@ void fz_err_callback(void *user, const char *message) {
     CTX_LOG_WARNINGF(doc->filepath, "FZ: %s", message);
 }
 
+void fz_warn_callback(void *user, const char *message) {
+    document_t *doc = (document_t *) user;
+
+    const scan_ebook_ctx_t *ctx = &thread_ctx;
+    CTX_LOG_DEBUGF(doc->filepath, "FZ: %s", message);
+}
+
 static void init_fzctx(fz_context *fzctx, document_t *doc) {
     fz_disable_icc(fzctx);
     fz_register_document_handlers(fzctx);
 
     fzctx->warn.print_user = doc;
-    fzctx->warn.print = fz_err_callback;
+    fzctx->warn.print = fz_warn_callback;
     fzctx->error.print_user = doc;
     fzctx->error.print = fz_err_callback;
 }
