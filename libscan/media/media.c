@@ -396,7 +396,14 @@ typedef struct {
 
 int memfile_read(void *ptr, uint8_t *buf, int buf_size) {
     memfile_t *mem = ptr;
-    return (int) fread(buf, 1, buf_size, mem->file);
+
+    size_t ret = fread(buf, 1, buf_size, mem->file);
+
+    if (ret != buf_size) {
+        return AVERROR_EOF;
+    }
+
+    return buf_size;
 }
 
 long memfile_seek(void *ptr, long offset, int whence) {
@@ -406,7 +413,12 @@ long memfile_seek(void *ptr, long offset, int whence) {
         return mem->info.st_size;
     }
 
-    return fseek(mem->file, offset, whence);
+    int ret = fseek(mem->file, offset, whence);
+    if (ret != 0) {
+        return AVERROR_EOF;
+    }
+
+    return ftell(mem->file);
 }
 
 int memfile_open(vfile_t *f, memfile_t *mem) {
@@ -465,23 +477,19 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
     }
 
     pFormatCtx->pb = io_ctx;
+    pFormatCtx->flags = AVFMT_FLAG_CUSTOM_IO;
 
-    int res = avformat_open_input(&pFormatCtx, "", NULL, NULL);
-    if (res == -5) {
-        // Tried to parse media that requires seek
+    int res = avformat_open_input(&pFormatCtx, f->filepath, NULL, NULL);
+    if (res < 0) {
+        if (res != -5) {
+            CTX_LOG_ERRORF(doc->filepath, "(media.c) avformat_open_input() returned [%d] %s", res, av_err2str(res))
+        }
         av_free(io_ctx->buffer);
         memfile_close(&memfile);
         avio_context_free(&io_ctx);
         avformat_close_input(&pFormatCtx);
         avformat_free_context(pFormatCtx);
-        return;
-    } else if (res < 0) {
-        CTX_LOG_ERRORF(doc->filepath, "(media.c) avformat_open_input() returned [%d] %s", res, av_err2str(res))
-        av_free(io_ctx->buffer);
-        memfile_close(&memfile);
-        avio_context_free(&io_ctx);
-        avformat_close_input(&pFormatCtx);
-        avformat_free_context(pFormatCtx);
+        printf("%s\n", av_err2str(res));
         return;
     }
 
@@ -504,7 +512,7 @@ void init_media() {
     av_log_set_level(AV_LOG_QUIET);
 }
 
-int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, document_t *doc) {
+int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, document_t *doc, const char *url) {
     memfile_t memfile;
     AVIOContext *io_ctx = NULL;
 
@@ -531,7 +539,7 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, docu
 
     pFormatCtx->pb = io_ctx;
 
-    int res = avformat_open_input(&pFormatCtx, "", NULL, NULL);
+    int res = avformat_open_input(&pFormatCtx, url, NULL, NULL);
     if (res != 0) {
         av_free(io_ctx->buffer);
         avformat_close_input(&pFormatCtx);

@@ -30,7 +30,7 @@ void parse_comic(scan_comic_ctx_t *ctx, vfile_t *f, document_t *doc) {
                 void* buf = malloc(entry_size);
                 archive_read_data(a, buf, entry_size);
 
-                ret = store_image_thumbnail((scan_media_ctx_t*)ctx, buf, entry_size, doc);
+                ret = store_image_thumbnail((scan_media_ctx_t*)ctx, buf, entry_size, doc, file_path);
                 free(buf);
 
                 if (ret == TRUE) {
