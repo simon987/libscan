@@ -308,7 +308,10 @@ static void *read_all(vfile_t *f, size_t *size) {
     void *buf = malloc(f->info.st_size);
     *size = f->read(f, buf, f->info.st_size);
 
-    //TODO: log
+    if (*size != f->info.st_size) {
+        free(buf);
+        return NULL;
+    }
 
     return buf;
 }

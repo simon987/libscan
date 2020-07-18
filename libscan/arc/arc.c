@@ -5,6 +5,8 @@
 #include <string.h>
 #include <fcntl.h>
 
+#define MAX_SUBFILE_SIZE (long)(10000000000)
+
 
 int should_parse_filtered_file(const char *filepath, int ext) {
     char tmp[PATH_MAX * 2];
@@ -34,7 +36,13 @@ int should_parse_filtered_file(const char *filepath, int ext) {
 }
 
 int arc_read(struct vfile *f, void *buf, size_t size) {
-    return archive_read_data(f->arc, buf, size);
+    size_t read = archive_read_data(f->arc, buf, size);
+
+    if (read != size) {
+        return -1;
+    }
+
+    return read;
 }
 
 int arc_open(vfile_t *f, struct archive **a, arc_data_t *arc_data, int allow_recurse) {

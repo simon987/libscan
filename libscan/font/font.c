@@ -143,8 +143,12 @@ void parse_font(scan_font_ctx_t *ctx, vfile_t *f, document_t *doc) {
         FT_Init_FreeType(&ft_lib);
     }
 
-    size_t buf_len;
+    size_t buf_len = 0;
     void * buf = read_all(f, &buf_len);
+
+    if (buf == NULL) {
+        return;
+    }
 
     FT_Face face;
     FT_Error err = FT_New_Memory_Face(ft_lib, (unsigned char *) buf, buf_len, 0, &face);
