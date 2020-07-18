@@ -60,7 +60,7 @@ include(ExternalProject)
 find_program(MAKE_EXE NAMES gmake nmake make)
 ExternalProject_Add(
         libmobi
-        GIT_REPOSITORY https://github.com/bfabiszewski/libmobi.git
+        GIT_REPOSITORY https://github.com/simon987/libmobi.git
         GIT_TAG "public"
 
         UPDATE_COMMAND ""
@@ -73,7 +73,7 @@ ExternalProject_Add(
         SOURCE_DIR "third-party/ext_libmobi/src/libmobi"
         BINARY_DIR "third-party/ext_libmobi/src/libmobi"
 
-        BUILD_COMMAND ${MAKE_EXE} -j 4 --silent
+        BUILD_COMMAND ${MAKE_EXE} -j 8 --silent
 )
 
 SET(MOBI_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libmobi/src/libmobi/src/.libs/)
@@ -97,7 +97,7 @@ ExternalProject_Add(
         SOURCE_DIR "third-party/ext_ffmpeg/src/ffmpeg"
         BINARY_DIR "third-party/ext_ffmpeg/src/ffmpeg"
 
-        BUILD_COMMAND ${MAKE_EXE} -j 3 --silent
+        BUILD_COMMAND ${MAKE_EXE} -j 8 --silent
 )
 
 SET(FFMPEG_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_ffmpeg/src/ffmpeg)
