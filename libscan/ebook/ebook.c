@@ -12,6 +12,20 @@
 __thread text_buffer_t thread_buffer;
 __thread scan_ebook_ctx_t thread_ctx;
 
+pthread_mutex_t Mutex;
+
+static void my_fz_lock(UNUSED(void *user), int lock) {
+    if (lock == FZ_LOCK_JPX) {
+        pthread_mutex_lock(&Mutex);
+    }
+}
+
+static void my_fz_unlock(UNUSED(void *user), int lock) {
+    if (lock == FZ_LOCK_JPX) {
+        pthread_mutex_unlock(&Mutex);
+    }
+}
+
 
 int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_document *fzdoc) {
 
@@ -53,14 +67,12 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     fz_var(err);
     fz_try(fzctx)
     {
-        pthread_mutex_lock(&ctx->mupdf_mutex);
         fz_run_page(fzctx, cover, dev, fz_identity, NULL);
     }
     fz_always(fzctx)
     {
         fz_close_device(fzctx, dev);
         fz_drop_device(fzctx, dev);
-        pthread_mutex_unlock(&ctx->mupdf_mutex);
     }
     fz_catch(fzctx)
         err = fzctx->error.errcode;
@@ -148,10 +160,19 @@ static void init_fzctx(fz_context *fzctx, document_t *doc) {
     fz_disable_icc(fzctx);
     fz_register_document_handlers(fzctx);
 
+    static int mu_is_initialized = 0;
+    if (!mu_is_initialized) {
+        pthread_mutex_init(&Mutex, NULL);
+        mu_is_initialized = 1;
+    }
+
     fzctx->warn.print_user = doc;
     fzctx->warn.print = fz_warn_callback;
     fzctx->error.print_user = doc;
     fzctx->error.print = fz_err_callback;
+
+    fzctx->locks.lock = my_fz_lock;
+    fzctx->locks.unlock = my_fz_unlock;
 }
 
 static int read_stext_block(fz_stext_block *block, text_buffer_t *tex) {
@@ -209,11 +230,6 @@ void fill_image(fz_context *fzctx, UNUSED(fz_device *dev),
 
 void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const char* mime_str,  document_t *doc) {
 
-    static int mu_is_initialized = 0;
-    if (!mu_is_initialized) {
-        pthread_mutex_init(&ctx->mupdf_mutex, NULL);
-        mu_is_initialized = 1;
-    }
     fz_context *fzctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
     thread_ctx = *ctx;
 
