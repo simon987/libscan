@@ -489,7 +489,6 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
         avio_context_free(&io_ctx);
         avformat_close_input(&pFormatCtx);
         avformat_free_context(pFormatCtx);
-        printf("%s\n", av_err2str(res));
         return;
     }
 
