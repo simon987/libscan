@@ -156,7 +156,7 @@ void parse_raw(scan_raw_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     int tn_ok = 0;
     if (libraw_lib->thumbnail.tformat == LIBRAW_THUMBNAIL_JPEG) {
-//        tn_ok = store_thumbnail_jpeg(ctx, thumb, doc);
+        tn_ok = store_thumbnail_jpeg(ctx, thumb, doc);
     } else if (libraw_lib->thumbnail.tformat == LIBRAW_THUMBNAIL_BITMAP) {
         // TODO: technically this should work but is currently untested
         tn_ok = store_thumbnail_rgb24(ctx, thumb, doc);

@@ -282,6 +282,20 @@ TEST(MediaImage, Mem1) {
     cleanup(&doc, &f);
 }
 
+TEST(MediaImage, Mem2AsIs) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/test2.zip", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_archive(&arc_recurse_media_ctx, &f, &doc);
+
+    ASSERT_EQ(size_before + 14098, store_size);
+
+    cleanup(&doc, &f);
+}
+
 TEST(MediaVideo, Vid3Mp4) {
     vfile_t f;
     document_t doc;
@@ -339,7 +353,7 @@ TEST(MediaVideoVfile, Vid3Ogv) {
     parse_archive(&arc_recurse_media_ctx, &f, &doc);
 
 //    ASSERT_STREQ(get_meta(&LastSubDoc, MetaMediaVideoCodec)->str_val, "theora");
-    ASSERT_EQ(get_meta(&LastSubDoc, MetaMediaBitrate)->long_val, 600758);
+    ASSERT_EQ(get_meta(&LastSubDoc, MetaMediaBitrate)->long_val, 590261);
     ASSERT_EQ(get_meta(&LastSubDoc, MetaMediaDuration)->long_val, 10);
     ASSERT_NE(size_before, store_size);
 

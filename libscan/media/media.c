@@ -9,9 +9,10 @@
 #define AVIO_BUF_SIZE 8192
 #define IS_VIDEO(fmt) (fmt->iformat->name && strcmp(fmt->iformat->name, "image2") != 0)
 
+#define STORE_AS_IS ((void*)-1)
 
 __always_inline
-AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int size) {
+void *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int size) {
 
     if (frame->pict_type == AV_PICTURE_TYPE_NONE) {
         return NULL;
@@ -20,6 +21,10 @@ AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int si
     int dstW;
     int dstH;
     if (frame->width <= size && frame->height <= size) {
+        if (decoder->pix_fmt == AV_PIX_FMT_YUV420P || decoder->pix_fmt == AV_PIX_FMT_YUVJ420P) {
+            return STORE_AS_IS;
+        }
+
         dstW = frame->width;
         dstH = frame->height;
     } else {
@@ -46,7 +51,7 @@ AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int si
     );
 
     int dst_buf_len = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, dstW, dstH, 1);
-    uint8_t *dst_buf = (uint8_t *) av_malloc(dst_buf_len);
+    uint8_t *dst_buf = (uint8_t *) av_malloc(dst_buf_len * 2);
 
     av_image_fill_arrays(scaled_frame->data, scaled_frame->linesize, dst_buf, AV_PIX_FMT_YUV420P, dstW, dstH, 1);
 
@@ -65,19 +70,39 @@ AVFrame *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int si
     return scaled_frame;
 }
 
-__always_inline
-static AVFrame *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVCodecContext *decoder, int stream_idx,
-                           document_t *doc) {
-    AVFrame *frame = av_frame_alloc();
+typedef struct {
+    AVPacket *packet;
+    AVFrame *frame;
+} frame_and_packet_t;
 
-    AVPacket avPacket;
-    av_init_packet(&avPacket);
+static void frame_and_packet_free(frame_and_packet_t *frame_and_packet) {
+    if (frame_and_packet->packet != NULL) {
+        av_packet_free(&frame_and_packet->packet);
+    }
+
+    if (frame_and_packet->frame != NULL) {
+        av_frame_free(&frame_and_packet->frame);
+    }
+
+    free(frame_and_packet->packet);
+    free(frame_and_packet);
+}
+
+__always_inline
+static frame_and_packet_t *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVCodecContext *decoder, int stream_idx,
+                           document_t *doc) {
+
+    frame_and_packet_t *result = calloc(1, sizeof(frame_and_packet_t));
+    result->packet = av_packet_alloc();
+    result->frame = av_frame_alloc();
+
+    av_init_packet(result->packet);
 
     int receive_ret = -EAGAIN;
     while (receive_ret == -EAGAIN) {
         // Get video frame
         while (1) {
-            int read_frame_ret = av_read_frame(pFormatCtx, &avPacket);
+            int read_frame_ret = av_read_frame(pFormatCtx, result->packet);
 
             if (read_frame_ret != 0) {
                 if (read_frame_ret != AVERROR_EOF) {
@@ -86,34 +111,36 @@ static AVFrame *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, A
                                      read_frame_ret, av_err2str(read_frame_ret)
                     )
                 }
-                av_frame_free(&frame);
-                av_packet_unref(&avPacket);
+                frame_and_packet_free(result);
                 return NULL;
             }
 
             //Ignore audio/other frames
-            if (avPacket.stream_index != stream_idx) {
-                av_packet_unref(&avPacket);
+            if (result->packet->stream_index != stream_idx) {
+                av_packet_unref(result->packet);
                 continue;
             }
             break;
         }
 
         // Feed it to decoder
-        int decode_ret = avcodec_send_packet(decoder, &avPacket);
+        int decode_ret = avcodec_send_packet(decoder, result->packet);
         if (decode_ret != 0) {
             CTX_LOG_ERRORF(doc->filepath,
                            "(media.c) avcodec_send_packet() returned error code [%d] %s",
                            decode_ret, av_err2str(decode_ret)
             )
-            av_frame_free(&frame);
-            av_packet_unref(&avPacket);
+            frame_and_packet_free(result);
             return NULL;
         }
-        av_packet_unref(&avPacket);
-        receive_ret = avcodec_receive_frame(decoder, frame);
+
+        receive_ret = avcodec_receive_frame(decoder, result->frame);
+        if (receive_ret == -EAGAIN && result->packet != NULL) {
+            av_packet_unref(result->packet);
+        }
     }
-    return frame;
+
+    return result;
 }
 
 void append_tag_meta_if_not_exists(scan_media_ctx_t *ctx, document_t *doc, AVDictionaryEntry *tag, enum metakey key) {
@@ -313,45 +340,51 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
             }
         }
 
-        AVFrame *frame = read_frame(ctx, pFormatCtx, decoder, video_stream, doc);
-        if (frame == NULL) {
+        frame_and_packet_t *frame_and_packet = read_frame(ctx, pFormatCtx, decoder, video_stream, doc);
+        if (frame_and_packet == NULL) {
             avcodec_free_context(&decoder);
             avformat_close_input(&pFormatCtx);
             avformat_free_context(pFormatCtx);
             return;
         }
 
-        append_video_meta(ctx, pFormatCtx, frame, doc, IS_VIDEO(pFormatCtx));
+        append_video_meta(ctx, pFormatCtx, frame_and_packet->frame, doc, IS_VIDEO(pFormatCtx));
 
         // Scale frame
-        AVFrame *scaled_frame = scale_frame(decoder, frame, ctx->tn_size);
+        AVFrame *scaled_frame = scale_frame(decoder, frame_and_packet->frame, ctx->tn_size);
 
         if (scaled_frame == NULL) {
-            av_frame_free(&frame);
+            frame_and_packet_free(frame_and_packet);
             avcodec_free_context(&decoder);
             avformat_close_input(&pFormatCtx);
             avformat_free_context(pFormatCtx);
             return;
         }
 
-        // Encode frame to jpeg
-        AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height,
-                                                          ctx->tn_qscale);
-        avcodec_send_frame(jpeg_encoder, scaled_frame);
+        if (scaled_frame == STORE_AS_IS) {
+            APPEND_TN_META(doc, frame_and_packet->frame->width, frame_and_packet->frame->height)
+            ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) frame_and_packet->packet->data, frame_and_packet->packet->size);
+        } else {
+            // Encode frame to jpeg
+            AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height,
+                                                              ctx->tn_qscale);
+            avcodec_send_frame(jpeg_encoder, scaled_frame);
 
-        AVPacket jpeg_packet;
-        av_init_packet(&jpeg_packet);
-        avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
+            AVPacket jpeg_packet;
+            av_init_packet(&jpeg_packet);
+            avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
 
-        // Save thumbnail
-        APPEND_TN_META(doc, scaled_frame->width, scaled_frame->height)
-        ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
+            // Save thumbnail
+            APPEND_TN_META(doc, scaled_frame->width, scaled_frame->height)
+            ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
 
-        av_packet_unref(&jpeg_packet);
-        av_frame_free(&frame);
-        av_free(*scaled_frame->data);
-        av_frame_free(&scaled_frame);
-        avcodec_free_context(&jpeg_encoder);
+            avcodec_free_context(&jpeg_encoder);
+            av_packet_unref(&jpeg_packet);
+            av_free(*scaled_frame->data);
+            av_frame_free(&scaled_frame);
+        }
+
+        frame_and_packet_free(frame_and_packet);
         avcodec_free_context(&decoder);
     }
 
@@ -399,7 +432,7 @@ int memfile_read(void *ptr, uint8_t *buf, int buf_size) {
 
     size_t ret = fread(buf, 1, buf_size, mem->file);
 
-    if (ret != buf_size) {
+    if (ret == 0 && feof(mem->file)) {
         return AVERROR_EOF;
     }
 
@@ -477,7 +510,6 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
     }
 
     pFormatCtx->pb = io_ctx;
-    pFormatCtx->flags = AVFMT_FLAG_CUSTOM_IO;
 
     int res = avformat_open_input(&pFormatCtx, f->filepath, NULL, NULL);
     if (res < 0) {
@@ -556,8 +588,8 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, docu
     avcodec_parameters_to_context(decoder, stream->codecpar);
     avcodec_open2(decoder, video_codec, NULL);
 
-    AVFrame *frame = read_frame(ctx, pFormatCtx, decoder, 0, doc);
-    if (frame == NULL) {
+    frame_and_packet_t *frame_and_packet = read_frame(ctx, pFormatCtx, decoder, 0, doc);
+    if (frame_and_packet == NULL) {
         avcodec_free_context(&decoder);
         avformat_close_input(&pFormatCtx);
         avformat_free_context(pFormatCtx);
@@ -568,10 +600,10 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, docu
     }
 
     // Scale frame
-    AVFrame *scaled_frame = scale_frame(decoder, frame, ctx->tn_size);
+    AVFrame *scaled_frame = scale_frame(decoder, frame_and_packet->frame, ctx->tn_size);
 
     if (scaled_frame == NULL) {
-        av_frame_free(&frame);
+        frame_and_packet_free(frame_and_packet);
         avcodec_free_context(&decoder);
         avformat_close_input(&pFormatCtx);
         avformat_free_context(pFormatCtx);
@@ -581,23 +613,30 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, docu
         return FALSE;
     }
 
-    // Encode frame to jpeg
-    AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height, ctx->tn_qscale);
-    avcodec_send_frame(jpeg_encoder, scaled_frame);
+    if (scaled_frame == STORE_AS_IS) {
+        APPEND_TN_META(doc, frame_and_packet->frame->width, frame_and_packet->frame->height)
+        ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) frame_and_packet->packet->data, frame_and_packet->packet->size);
+    } else {
+        // Encode frame to jpeg
+        AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height,
+                                                          ctx->tn_qscale);
+        avcodec_send_frame(jpeg_encoder, scaled_frame);
 
-    AVPacket jpeg_packet;
-    av_init_packet(&jpeg_packet);
-    avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
+        AVPacket jpeg_packet;
+        av_init_packet(&jpeg_packet);
+        avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
 
-    // Save thumbnail
-    APPEND_TN_META(doc, scaled_frame->width, scaled_frame->height)
-    ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
+        // Save thumbnail
+        APPEND_TN_META(doc, scaled_frame->width, scaled_frame->height)
+        ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
 
-    av_packet_unref(&jpeg_packet);
-    av_frame_free(&frame);
+        av_packet_unref(&jpeg_packet);
+        avcodec_free_context(&jpeg_encoder);
+    }
+
+    frame_and_packet_free(frame_and_packet);
     av_free(*scaled_frame->data);
     av_frame_free(&scaled_frame);
-    avcodec_free_context(&jpeg_encoder);
     avcodec_free_context(&decoder);
 
     avformat_close_input(&pFormatCtx);
