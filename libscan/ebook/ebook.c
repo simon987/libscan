@@ -42,14 +42,14 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     if (err != 0) {
         fz_drop_page(fzctx, cover);
         CTX_LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, fzctx->error.message)
-        return -1;
+        return FALSE;
     }
 
     fz_rect bounds = fz_bound_page(fzctx, cover);
 
     float scale;
-    float w = (float) bounds.x1 - bounds.x0;
-    float h = (float) bounds.y1 - bounds.y0;
+    float w = bounds.x1 - bounds.x0;
+    float h = bounds.y1 - bounds.y0;
     if (w > h) {
         scale = (float) ctx->tn_size / w;
     } else {
@@ -81,14 +81,14 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
         CTX_LOG_WARNINGF(doc->filepath, "fz_run_page() returned error code [%d] %s", err, fzctx->error.message)
         fz_drop_page(fzctx, cover);
         fz_drop_pixmap(fzctx, pixmap);
-        return -1;
+        return FALSE;
     }
 
     if (pixmap->n != 3) {
         CTX_LOG_ERRORF(doc->filepath, "Got unexpected pixmap depth: %d", pixmap->n)
         fz_drop_page(fzctx, cover);
         fz_drop_pixmap(fzctx, pixmap);
-        return -1;
+        return FALSE;
     }
 
     // RGB24 -> YUV420p
@@ -96,7 +96,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
 
     struct SwsContext *sws_ctx= sws_getContext(
             pixmap->w, pixmap->h, AV_PIX_FMT_RGB24,
-            pixmap->w, pixmap->h, AV_PIX_FMT_YUVJ420P,
+            pixmap->w, pixmap->h, AV_PIX_FMT_YUV420P,
             SIST_SWS_ALGO, 0, 0, 0
     );
 
@@ -139,7 +139,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     fz_drop_pixmap(fzctx, pixmap);
     fz_drop_page(fzctx, cover);
 
-    return 0;
+    return TRUE;
 }
 
 void fz_err_callback(void *user, const char *message) {
@@ -300,15 +300,14 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
     }
 
     if (ctx->tn_size > 0) {
-        err = render_cover(ctx, fzctx, doc, fzdoc);
+        if (render_cover(ctx, fzctx, doc, fzdoc) == FALSE) {
+            fz_drop_stream(fzctx, stream);
+            fz_drop_document(fzctx, fzdoc);
+            fz_drop_context(fzctx);
+            return;
+        }
     }
 
-    if (err != 0) {
-        fz_drop_stream(fzctx, stream);
-        fz_drop_document(fzctx, fzdoc);
-        fz_drop_context(fzctx);
-        return;
-    }
 
     if (ctx->content_size > 0) {
         fz_stext_options opts = {0};

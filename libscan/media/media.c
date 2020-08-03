@@ -21,7 +21,7 @@ void *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int size)
     int dstW;
     int dstH;
     if (frame->width <= size && frame->height <= size) {
-        if (decoder->pix_fmt == AV_PIX_FMT_YUV420P || decoder->pix_fmt == AV_PIX_FMT_YUVJ420P) {
+        if (decoder->codec_id == AV_CODEC_ID_MJPEG || decoder->codec_id == AV_CODEC_ID_PNG) {
             return STORE_AS_IS;
         }
 
