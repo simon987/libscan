@@ -91,6 +91,10 @@ void parse_raw(scan_raw_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     size_t buf_len = 0;
     void *buf = read_all(f, &buf_len);
+    if (buf == NULL) {
+        CTX_LOG_ERROR(f->filepath, "read_all() failed")
+        return;
+    }
 
     int ret = libraw_open_buffer(libraw_lib, buf, buf_len);
     if (ret != 0) {

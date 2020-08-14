@@ -166,6 +166,10 @@ void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     size_t buf_len;
     void *buf = read_all(f, &buf_len);
+    if (buf == NULL) {
+        CTX_LOG_ERROR(f->filepath, "read_all() failed")
+        return;
+    }
 
     struct archive *a = archive_read_new();
     archive_read_support_format_zip(a);

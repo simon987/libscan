@@ -39,6 +39,10 @@ int arc_read(struct vfile *f, void *buf, size_t size) {
     size_t read = archive_read_data(f->arc, buf, size);
 
     if (read != size) {
+        const char* error_str = archive_error_string(f->arc);
+        if (error_str != NULL) {
+            f->logf(f->filepath, LEVEL_ERROR, "Error reading archive file: %s", error_str);
+        }
         return -1;
     }
 
@@ -119,6 +123,8 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
         sub_job->vfile.arc = a;
         sub_job->vfile.filepath = sub_job->filepath;
         sub_job->vfile.is_fs_file = FALSE;
+        sub_job->vfile.log = ctx->log;
+        sub_job->vfile.logf = ctx->logf;
         memcpy(sub_job->parent, doc->uuid, sizeof(uuid_t));
 
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {

@@ -23,6 +23,9 @@
 #define IS_META_LONG(key) (key & META_LONG_MASK) == META_LONG_MASK
 #define IS_META_STR(meta) (meta->key & META_STR_MASK) == META_STR_MASK
 
+typedef void (*store_callback_t)(char *key, size_t key_len, char *buf, size_t buf_len);
+typedef void (*logf_callback_t)(const char *filepath, int level, char *format, ...);
+typedef void (*log_callback_t)(const char *filepath, int level, char *str);
 
 typedef int scan_code_t;
 #define SCAN_OK (scan_code_t) 0
@@ -130,6 +133,8 @@ typedef struct vfile {
     seek_func_t seek;
     close_func_t close;
     reset_func_t reset;
+    log_callback_t log;
+    logf_callback_t logf;
 } vfile_t;
 
 typedef struct parse_job_t {
@@ -153,9 +158,6 @@ typedef struct parse_job_t {
 
 #include "util.h"
 
-typedef void (*store_callback_t)(char *key, size_t key_len, char *buf, size_t buf_len);
-typedef void (*logf_callback_t)(const char *filepath, int level, char *format, ...);
-typedef void (*log_callback_t)(const char *filepath, int level, char *str);
 typedef void (*parse_callback_t)(parse_job_t *job);
 
 #endif

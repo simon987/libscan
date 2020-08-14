@@ -397,6 +397,11 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
 void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  document_t *doc) {
     size_t buf_len;
     void * buf = read_all(f, &buf_len);
+    if (buf == NULL) {
+        CTX_LOG_ERROR(f->filepath, "read_all() failed")
+        return;
+    }
+
     parse_ebook_mem(ctx, buf, buf_len, mime_str, doc);
     free(buf);
 }

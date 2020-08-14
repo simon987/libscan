@@ -14,6 +14,11 @@ void parse_mobi(scan_mobi_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     size_t buf_len;
     char* buf = read_all(f, &buf_len);
+    if (buf == NULL) {
+        mobi_free(m);
+        CTX_LOG_ERROR(f->filepath, "read_all() failed")
+        return;
+    }
 
     FILE *file = fmemopen(buf, buf_len, "rb");
     if (file == NULL) {
