@@ -172,9 +172,9 @@ if (BUILD_TESTS)
 
     add_executable(scan_ub_test test/main.cpp test/test_util.cpp test/test_util.h)
     target_compile_options(scan_ub_test PRIVATE -g -fsanitize=undefined -fno-omit-frame-pointer)
-    target_link_libraries(scan_ub_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=undefined scan)
+    target_link_libraries(scan_ub_test PRIVATE GTest::gtest GTest::gtest_main uuid -fsanitize=undefined scan)
 
     add_executable(scan_a_test test/main.cpp test/test_util.cpp test/test_util.h)
     target_compile_options(scan_a_test PRIVATE -g -fsanitize=address -fno-omit-frame-pointer)
-    target_link_libraries(scan_a_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=address scan)
+    target_link_libraries(scan_a_test PRIVATE GTest::gtest GTest::gtest_main uuid -fsanitize=address scan)
 endif()

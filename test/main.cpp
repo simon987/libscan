@@ -212,6 +212,18 @@ TEST(Ebook, Epub1) {
     cleanup(&doc, &f);
 }
 
+TEST(Ebook, EpubBlankFirstPage) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/EpubBlankFirstPage.epub", &f, &doc);
+
+    parse_ebook(&ebook_500_ctx, &f, "application/epub+zip", &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Design Culture");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
+    cleanup(&doc, &f);
+}
+
 /* Comic */
 TEST(Comic, ComicCbz) {
     vfile_t f;

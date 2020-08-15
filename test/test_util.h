@@ -2,6 +2,9 @@
 #define SCAN_TEST_UTIL_H
 
 #include "../libscan/scan.h"
+#include <fcntl.h>
+#include <unistd.h>
+#include <uuid/uuid.h>
 
 void load_file(const char *filepath, vfile_t *f);
 void load_mem(void *mem, size_t size, vfile_t *f);
@@ -21,6 +24,13 @@ static size_t store_size = 0;
 
 static void counter_store(char* key, size_t key_len, char *value, size_t value_len) {
     store_size += value_len;
+//    char id[37];
+//    char tmp[PATH_MAX];
+//    uuid_unparse(reinterpret_cast<const unsigned char *>(key), id);
+//    sprintf(tmp, "%s.jpeg", id);
+//    int fd = open(tmp, O_TRUNC|O_WRONLY|O_CREAT, 0777);
+//    write(fd, value, value_len);
+//    close(fd);
 }
 
 meta_line_t *get_meta(document_t *doc, metakey key);

@@ -27,25 +27,35 @@ static void my_fz_unlock(UNUSED(void *user), int lock) {
 }
 
 
-int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_document *fzdoc) {
+int pixmap_is_blank(const fz_pixmap *pixmap) {
+    int pixmap_size = pixmap->n * pixmap->w * pixmap->h;
+    const int pixel0 = pixmap->samples[0];
+    for (int i = 0; i < pixmap_size; i++) {
+        if (pixmap->samples[i] != pixel0) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+fz_pixmap *load_pixmap(scan_ebook_ctx_t *ctx, int page, fz_context *fzctx, fz_document *fzdoc, document_t *doc, fz_page **cover) {
 
     int err = 0;
-    fz_page *cover = NULL;
 
     fz_var(cover);
     fz_var(err);
     fz_try(fzctx)
-        cover = fz_load_page(fzctx, fzdoc, 0);
+        *cover = fz_load_page(fzctx, fzdoc, page);
     fz_catch(fzctx)
         err = 1;
 
     if (err != 0) {
-        fz_drop_page(fzctx, cover);
+        fz_drop_page(fzctx, *cover);
         CTX_LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, fzctx->error.message)
-        return FALSE;
+        return NULL;
     }
 
-    fz_rect bounds = fz_bound_page(fzctx, cover);
+    fz_rect bounds = fz_bound_page(fzctx, *cover);
 
     float scale;
     float w = bounds.x1 - bounds.x0;
@@ -65,12 +75,10 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     fz_device *dev = fz_new_draw_device(fzctx, m, pixmap);
 
     fz_var(err);
-    fz_try(fzctx)
-    {
-        fz_run_page(fzctx, cover, dev, fz_identity, NULL);
+    fz_try(fzctx) {
+        fz_run_page(fzctx, *cover, dev, fz_identity, NULL);
     }
-    fz_always(fzctx)
-    {
+    fz_always(fzctx) {
         fz_close_device(fzctx, dev);
         fz_drop_device(fzctx, dev);
     }
@@ -79,22 +87,43 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
 
     if (err != 0) {
         CTX_LOG_WARNINGF(doc->filepath, "fz_run_page() returned error code [%d] %s", err, fzctx->error.message)
-        fz_drop_page(fzctx, cover);
+        fz_drop_page(fzctx, *cover);
         fz_drop_pixmap(fzctx, pixmap);
-        return FALSE;
+        return NULL;
     }
 
     if (pixmap->n != 3) {
         CTX_LOG_ERRORF(doc->filepath, "Got unexpected pixmap depth: %d", pixmap->n)
+        fz_drop_page(fzctx, *cover);
+        fz_drop_pixmap(fzctx, pixmap);
+        return NULL;
+    }
+
+    return pixmap;
+}
+
+int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_document *fzdoc) {
+
+    fz_page *cover = NULL;
+    fz_pixmap *pixmap = load_pixmap(ctx, 0, fzctx, fzdoc, doc, &cover);
+    if (pixmap == NULL) {
+        return FALSE;
+    }
+
+    if (pixmap_is_blank(pixmap)) {
         fz_drop_page(fzctx, cover);
         fz_drop_pixmap(fzctx, pixmap);
-        return FALSE;
+        CTX_LOG_DEBUG(doc->filepath, "Cover page is blank, using page 1 instead")
+        pixmap = load_pixmap(ctx, 1, fzctx, fzdoc, doc, &cover);
+        if (pixmap == NULL) {
+            return FALSE;
+        }
     }
 
     // RGB24 -> YUV420p
     AVFrame *scaled_frame = av_frame_alloc();
 
-    struct SwsContext *sws_ctx= sws_getContext(
+    struct SwsContext *sws_ctx = sws_getContext(
             pixmap->w, pixmap->h, AV_PIX_FMT_RGB24,
             pixmap->w, pixmap->h, AV_PIX_FMT_YUV420P,
             SIST_SWS_ALGO, 0, 0, 0
@@ -228,7 +257,7 @@ void fill_image(fz_context *fzctx, UNUSED(fz_device *dev),
     }
 }
 
-void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const char* mime_str,  document_t *doc) {
+void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const char *mime_str, document_t *doc) {
 
     fz_context *fzctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
     thread_ctx = *ctx;
@@ -338,7 +367,7 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
             dev->clip_stroke_path = NULL;
             dev->clip_stroke_text = NULL;
 
-            if (ctx->tesseract_lang!= NULL) {
+            if (ctx->tesseract_lang != NULL) {
                 dev->fill_image = fill_image;
             }
 
@@ -394,9 +423,9 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void* buf, size_t buf_len, const cha
     fz_drop_context(fzctx);
 }
 
-void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char* mime_str,  document_t *doc) {
+void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char *mime_str, document_t *doc) {
     size_t buf_len;
-    void * buf = read_all(f, &buf_len);
+    void *buf = read_all(f, &buf_len);
     if (buf == NULL) {
         CTX_LOG_ERROR(f->filepath, "read_all() failed")
         return;
