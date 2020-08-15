@@ -23,6 +23,8 @@ static scan_ebook_ctx_t ebook_500_ctx;
 
 static scan_comic_ctx_t comic_ctx;
 
+static scan_comic_ctx_t comic_big_ctx;
+
 static scan_media_ctx_t media_ctx;
 
 static scan_ooxml_ctx_t ooxml_500_ctx;
@@ -238,6 +240,32 @@ TEST(Comic, ComicCbr) {
 
     cleanup(&doc, &f);
 }
+
+TEST(Comic, ComicCbrAsIs) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/laugh.cbr", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_comic(&comic_big_ctx, &f, &doc);
+
+    ASSERT_EQ(store_size - size_before, 92451);
+
+    cleanup(&doc, &f);
+}
+
+
+TEST(Comic, ComicCbrFilters) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/cannot_parse_filters.cbr", &f, &doc);
+
+    parse_comic(&comic_ctx, &f, &doc);
+
+    cleanup(&doc, &f);
+}
+
 
 /* Media (image) */
 
@@ -651,6 +679,12 @@ int main(int argc, char **argv) {
     comic_ctx.log = noop_log;
     comic_ctx.logf = noop_logf;
     comic_ctx.store = counter_store;
+
+    comic_big_ctx.tn_qscale = 1.0;
+    comic_big_ctx.tn_size = 5000;
+    comic_big_ctx.log = noop_log;
+    comic_big_ctx.logf = noop_logf;
+    comic_big_ctx.store = counter_store;
 
     media_ctx.log = noop_log;
     media_ctx.logf = noop_logf;

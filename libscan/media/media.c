@@ -632,11 +632,11 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, docu
 
         av_packet_unref(&jpeg_packet);
         avcodec_free_context(&jpeg_encoder);
+        av_free(*scaled_frame->data);
+        av_frame_free(&scaled_frame);
     }
 
     frame_and_packet_free(frame_and_packet);
-    av_free(*scaled_frame->data);
-    av_frame_free(&scaled_frame);
     avcodec_free_context(&decoder);
 
     avformat_close_input(&pFormatCtx);
