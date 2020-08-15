@@ -28,7 +28,16 @@ void parse_comic(scan_comic_ctx_t *ctx, vfile_t *f, document_t *doc) {
             if (p != NULL && strcmp(p, ".png") == 0 || strcmp(p, ".jpg") == 0 || strcmp(p, ".jpeg") == 0) {
                 size_t entry_size = archive_entry_size(entry);
                 void* buf = malloc(entry_size);
-                archive_read_data(a, buf, entry_size);
+                int read = archive_read_data(a, buf, entry_size);
+
+                if (read != entry_size) {
+                    const char* err_str = archive_error_string(a);
+                    if (err_str) {
+                        CTX_LOG_ERRORF("comic.c", "Error while reading entry: %s", err_str)
+                    }
+                    free(buf);
+                    break;
+                }
 
                 ret = store_image_thumbnail((scan_media_ctx_t*)ctx, buf, entry_size, doc, file_path);
                 free(buf);
