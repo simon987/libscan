@@ -135,7 +135,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     av_image_fill_arrays(scaled_frame->data, scaled_frame->linesize, dst_buf, AV_PIX_FMT_YUV420P, pixmap->w, pixmap->h, 1);
 
     const uint8_t *in_data[1] = {pixmap->samples};
-    int in_line_size[1] = {3 * pixmap->w};
+    int in_line_size[1] = {pixmap->stride};
 
     sws_scale(sws_ctx,
               in_data, in_line_size,
@@ -327,6 +327,8 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
         fz_drop_context(fzctx);
         return;
     }
+
+    APPEND_INT_META(doc, MetaPages, page_count)
 
     if (ctx->tn_size > 0) {
         if (render_cover(ctx, fzctx, doc, fzdoc) == FALSE) {

@@ -185,6 +185,7 @@ TEST(Ebook, CandlePdf) {
     ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
     ASSERT_NE(get_meta(&doc, MetaContent)->str_val[0], ' ');
     ASSERT_NE(size_before, store_size);
+    ASSERT_EQ(get_meta(&doc, MetaPages)->int_val, 16);
 
     cleanup(&doc, &f);
 }
@@ -197,6 +198,16 @@ TEST(Ebook, Utf8Pdf) {
     parse_ebook(&ebook_500_ctx, &f, "application/pdf", &doc);
 
     ASSERT_TRUE(STR_STARTS_WITH(get_meta(&doc, MetaContent)->str_val, "最後測試 "));
+    cleanup(&doc, &f);
+}
+
+TEST(Ebook, Pdf2) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/pdf2.pdf", &f, &doc);
+
+    parse_ebook(&ebook_500_ctx, &f, "application/pdf", &doc);
+
     cleanup(&doc, &f);
 }
 
