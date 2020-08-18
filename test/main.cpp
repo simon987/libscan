@@ -211,6 +211,16 @@ TEST(Ebook, Pdf2) {
     cleanup(&doc, &f);
 }
 
+TEST(Ebook, PdfBlank) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/blank.pdf", &f, &doc);
+
+    parse_ebook(&ebook_500_ctx, &f, "application/pdf", &doc);
+
+    cleanup(&doc, &f);
+}
+
 TEST(Ebook, Epub1) {
     vfile_t f;
     document_t doc;
