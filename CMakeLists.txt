@@ -46,6 +46,8 @@ find_library(FREETYPE_LIB NAMES freetype freetyped)
 find_package(unofficial-brotli CONFIG REQUIRED)
 find_library(LZO2_LIB NAMES lzo2)
 
+find_library(RAW_LIB NAMES libraw.a)
+find_library(MUPDF_LIB NAMES liblibmupdf.a)
 find_library(CMS_LIB NAMES lcms)
 find_library(JAS_LIB NAMES jasper)
 find_library(GOMP_LIB NAMES libgomp.a gomp PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-linux-gnu/10/)
@@ -120,7 +122,7 @@ target_link_libraries(
         ${LZO2_LIB}
         LibLZMA::LibLZMA
 
-        libmupdf
+        ${MUPDF_LIB}
         openjp2
 
         ${MOBI_LIB_DIR}/libmobi.a
@@ -152,7 +154,7 @@ target_link_libraries(
 
         ${CMAKE_THREAD_LIBS_INIT}
 
-        raw
+        ${RAW_LIB}
         ${GOMP_LIB}
         ${CMS_LIB}
         ${JAS_LIB}
