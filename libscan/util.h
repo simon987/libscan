@@ -213,6 +213,19 @@ static void text_buffer_terminate_string(text_buffer_t *buf) {
     }
 }
 
+// Naive UTF16 -> ascii conversion
+static int text_buffer_append_string16_le(text_buffer_t *buf, const char *str, size_t len) {
+    for (int i = 1; i < len; i += 2) {
+        text_buffer_append_char(buf, str[i]);
+    }
+}
+
+static int text_buffer_append_string16_be(text_buffer_t *buf, const char *str, size_t len) {
+    for (int i = 0; i < len; i += 2) {
+        text_buffer_append_char(buf, str[i]);
+    }
+}
+
 #define UTF8_END_OF_STRING \
     (ptr - str >= len || *ptr == 0 || \
     (0xc0 == (0xe0 & *ptr) && ptr - str > len - 2) || \

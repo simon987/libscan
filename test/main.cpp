@@ -62,7 +62,7 @@ TEST(Text, MemUtf8_1) {
 
     parse_text(&text_500_ctx, &f, &doc);
 
-    ASSERT_EQ(strlen(get_meta(&doc, MetaContent)->str_val), 1);
+    ASSERT_EQ(get_meta(&doc, MetaContent), nullptr);
     cleanup(&doc, &f);
 }
 
@@ -111,6 +111,18 @@ TEST(Text, MemWhitespace) {
     parse_text(&text_500_ctx, &f, &doc);
 
     ASSERT_STREQ(get_meta(&doc, MetaContent)->str_val, "test test test");
+    cleanup(&doc, &f);
+}
+
+TEST(Text, Utf16LE) {
+
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/text/pain_is_beauty.log", &f, &doc);
+    parse_text(&text_500_ctx, &f, &doc);
+
+    ASSERT_GE(strlen(get_meta(&doc, MetaContent)->str_val), 200);
+
     cleanup(&doc, &f);
 }
 

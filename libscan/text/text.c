@@ -4,6 +4,10 @@ scan_code_t parse_text(scan_text_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     int to_read = MIN(ctx->content_size, f->info.st_size);
 
+    if (to_read <= 2) {
+        return SCAN_OK;
+    }
+
     char *buf = malloc(to_read);
     int ret = f->read(f, buf, to_read);
     if (ret < 0) {
@@ -13,7 +17,14 @@ scan_code_t parse_text(scan_text_ctx_t *ctx, vfile_t *f, document_t *doc) {
     }
 
     text_buffer_t tex = text_buffer_create(ctx->content_size);
-    text_buffer_append_string(&tex, buf, to_read);
+
+    if ((*(int16_t*)buf) == (int16_t)0xFFFE) {
+        text_buffer_append_string16_le(&tex, buf + 2, to_read - 2);
+    } else if((*(int16_t*)buf) == (int16_t)0xFEFF) {
+        text_buffer_append_string16_be(&tex, buf + 2, to_read - 2);
+    } else {
+        text_buffer_append_string(&tex, buf, to_read);
+    }
     text_buffer_terminate_string(&tex);
 
     APPEND_STR_META(doc, MetaContent, tex.dyn_buffer.buf);
