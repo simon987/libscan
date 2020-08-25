@@ -43,11 +43,12 @@ find_package(ZLIB REQUIRED)
 find_library(JBIG2DEC_LIB NAMES jbig2decd jbig2dec)
 find_library(HARFBUZZ_LIB NAMES harfbuzz harfbuzzd)
 find_library(FREETYPE_LIB NAMES freetype freetyped)
+find_package(unofficial-brotli CONFIG REQUIRED)
 find_library(LZO2_LIB NAMES lzo2)
 
 find_library(CMS_LIB NAMES lcms)
 find_library(JAS_LIB NAMES jasper)
-find_library(GOMP_LIB NAMES libgomp.a gomp PATHS /usr/lib/gcc/x86_64-linux-gnu/5/)
+find_library(GOMP_LIB NAMES libgomp.a gomp PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-linux-gnu/10/)
 
 
 target_compile_options(
@@ -139,6 +140,7 @@ target_link_libraries(
         ${Tesseract_LIBRARIES}
         ${LIBXML2_LIBRARIES}
         ${FREETYPE_LIB}
+        unofficial::brotli::brotlidec-static
 
         ${FFMPEG_LIB_DIR}/libavformat/libavformat.a
         ${FFMPEG_LIB_DIR}/libavcodec/libavcodec.a
@@ -172,9 +174,9 @@ if (BUILD_TESTS)
 
     add_executable(scan_ub_test test/main.cpp test/test_util.cpp test/test_util.h)
     target_compile_options(scan_ub_test PRIVATE -g -fsanitize=undefined -fno-omit-frame-pointer)
-    target_link_libraries(scan_ub_test PRIVATE GTest::gtest GTest::gtest_main uuid -fsanitize=undefined scan)
+    target_link_libraries(scan_ub_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=undefined scan)
 
     add_executable(scan_a_test test/main.cpp test/test_util.cpp test/test_util.h)
     target_compile_options(scan_a_test PRIVATE -g -fsanitize=address -fno-omit-frame-pointer)
-    target_link_libraries(scan_a_test PRIVATE GTest::gtest GTest::gtest_main uuid -fsanitize=address scan)
+    target_link_libraries(scan_a_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=address scan)
 endif()
