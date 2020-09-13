@@ -93,7 +93,6 @@ typedef struct meta_line {
     };
 } meta_line_t;
 
-#define USER_UID_COUNT 64
 
 typedef struct document {
     unsigned char uuid[16];
@@ -103,7 +102,6 @@ typedef struct document {
     int mtime;
     short base;
     short ext;
-    uid_t users[USER_UID_COUNT];
     meta_line_t *meta_head;
     meta_line_t *meta_tail;
     char *filepath;
