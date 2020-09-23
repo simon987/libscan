@@ -50,7 +50,6 @@ fz_pixmap *load_pixmap(scan_ebook_ctx_t *ctx, int page, fz_context *fzctx, fz_do
         err = 1;
 
     if (err != 0) {
-        fz_drop_page(fzctx, *cover);
         CTX_LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, fzctx->error.message)
         return NULL;
     }
