@@ -15,13 +15,13 @@ __thread scan_ebook_ctx_t thread_ctx;
 pthread_mutex_t Mutex;
 
 static void my_fz_lock(UNUSED(void *user), int lock) {
-    if (lock == FZ_LOCK_JPX) {
+    if (lock == FZ_LOCK_FREETYPE) {
         pthread_mutex_lock(&Mutex);
     }
 }
 
 static void my_fz_unlock(UNUSED(void *user), int lock) {
-    if (lock == FZ_LOCK_JPX) {
+    if (lock == FZ_LOCK_FREETYPE) {
         pthread_mutex_unlock(&Mutex);
     }
 }
