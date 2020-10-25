@@ -185,7 +185,6 @@ void fz_warn_callback(void *user, const char *message) {
 }
 
 static void init_fzctx(fz_context *fzctx, document_t *doc) {
-    fz_disable_icc(fzctx);
     fz_register_document_handlers(fzctx);
 
     static int mu_is_initialized = 0;
