@@ -10,6 +10,7 @@ extern "C" {
 #include "../libscan/ooxml/ooxml.h"
 #include "../libscan/mobi/scan_mobi.h"
 #include "../libscan/raw/raw.h"
+#include "../libscan/msdoc/msdoc.h"
 #include <libavutil/avutil.h>
 }
 
@@ -32,6 +33,10 @@ static scan_ooxml_ctx_t ooxml_500_ctx;
 static scan_mobi_ctx_t mobi_500_ctx;
 
 static scan_raw_ctx_t raw_ctx;
+
+static scan_msdoc_ctx_t msdoc_ctx;
+
+static scan_msdoc_ctx_t msdoc_text_ctx;
 
 
 document_t LastSubDoc;
@@ -689,6 +694,98 @@ TEST(RAW, Fuji) {
     cleanup(&doc, &f);
 }
 
+/* msdoc */
+TEST(Msdoc, Test1Pdf) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/msdoc/test1.doc", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_msdoc(&msdoc_ctx, &f, &doc);
+
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "October 2000") != nullptr);
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "INTERNATIONAL ORGANIZATION FOR STANDARDIZATION");
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Oliver Morgan");
+    ASSERT_EQ(get_meta(&doc, MetaPages)->int_val, 57);
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), msdoc_ctx.content_size, 4);
+    ASSERT_NE(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Msdoc, Test1Text) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/msdoc/test1.doc", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_msdoc(&msdoc_text_ctx, &f, &doc);
+
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "October 2000") != nullptr);
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "INTERNATIONAL ORGANIZATION FOR STANDARDIZATION");
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Oliver Morgan");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), msdoc_ctx.content_size, 4);
+    ASSERT_EQ(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Msdoc, Test2Pdf) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/msdoc/test2.doc", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_msdoc(&msdoc_ctx, &f, &doc);
+
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "GNU Free Documentation License") != nullptr);
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "DWARF Debugging Information Format");
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Ron Brender");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), msdoc_ctx.content_size, 4);
+    ASSERT_NE(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Msdoc, Test3Pdf) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/msdoc/test3.doc", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_msdoc(&msdoc_ctx, &f, &doc);
+
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "INTERNATIONAL PATENT CLASSIFICATION") != nullptr);
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "IPC Fixed Texts Specification");
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Fievet");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), msdoc_ctx.content_size, 4);
+    ASSERT_NE(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Msdoc, Test4Pdf) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/msdoc/test4.doc", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_msdoc(&msdoc_ctx, &f, &doc);
+
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "SQL Server international data types") != nullptr);
+    ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "MSDN Authoring Template");
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Brenda Yen");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), msdoc_ctx.content_size, 4);
+    ASSERT_NE(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
@@ -752,6 +849,18 @@ int main(int argc, char **argv) {
     raw_ctx.store = counter_store;
     raw_ctx.tn_size = 500;
     raw_ctx.tn_qscale = 5.0;
+
+    msdoc_ctx.log = noop_log;
+    msdoc_ctx.logf = noop_logf;
+    msdoc_ctx.store = counter_store;
+    msdoc_ctx.content_size = 500;
+    msdoc_ctx.tn_size = 500;
+
+    msdoc_text_ctx.log = noop_log;
+    msdoc_text_ctx.logf = noop_logf;
+    msdoc_text_ctx.store = counter_store;
+    msdoc_text_ctx.content_size = 500;
+    msdoc_text_ctx.tn_size = 0;
 
     av_log_set_level(AV_LOG_QUIET);
     ::testing::InitGoogleTest(&argc, argv);

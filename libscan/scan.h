@@ -1,6 +1,8 @@
 #ifndef SCAN_SCAN_H
 #define SCAN_SCAN_H
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <sys/stat.h>
 #include <uuid/uuid.h>
@@ -146,16 +148,6 @@ typedef struct parse_job_t {
     char filepath[1];
 } parse_job_t;
 
-
-#define APPEND_META(doc, meta) \
-    meta->next = NULL;\
-    if (doc->meta_head == NULL) {\
-        doc->meta_head = meta;\
-        doc->meta_tail = doc->meta_head;\
-    } else {\
-        doc->meta_tail->next = meta;\
-        doc->meta_tail = meta;\
-    }
 
 #include "util.h"
 

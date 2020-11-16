@@ -292,10 +292,7 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
         ;
 
     if (strlen(title) > 0) {
-        meta_line_t *meta_title = malloc(sizeof(meta_line_t) + strlen(title));
-        meta_title->key = MetaTitle;
-        strcpy(meta_title->str_val, title);
-        APPEND_META(doc, meta_title)
+        APPEND_UTF8_META(doc, MetaTitle, title)
     }
 
     char author[4096] = {'\0',};
@@ -305,10 +302,7 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
         ;
 
     if (strlen(author) > 0) {
-        meta_line_t *meta_author = malloc(sizeof(meta_line_t) + strlen(author));
-        meta_author->key = MetaAuthor;
-        strcpy(meta_author->str_val, author);
-        APPEND_META(doc, meta_author)
+        APPEND_UTF8_META(doc, MetaAuthor, author)
     }
 
     int page_count = -1;

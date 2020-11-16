@@ -5,6 +5,12 @@ set(CMAKE_C_STANDARD 11)
 
 option(BUILD_TESTS "Build tests" off)
 
+add_subdirectory(third-party/antiword)
+add_compile_definitions(
+        antiword
+        NDEBUG
+)
+
 add_library(
         scan
         libscan/util.c libscan/util.h
@@ -18,6 +24,7 @@ add_library(
         libscan/ooxml/ooxml.c libscan/ooxml/ooxml.h
         libscan/media/media.c libscan/media/media.h
         libscan/font/font.c libscan/font/font.h
+        libscan/msdoc/msdoc.c libscan/msdoc/msdoc.h
 
         third-party/utf8.h
         libscan/mobi/scan_mobi.c libscan/mobi/scan_mobi.h libscan/raw/raw.c libscan/raw/raw.h)
@@ -110,6 +117,7 @@ add_dependencies(
         scan
         libmobi
         ffmpeg
+        antiword
 )
 
 target_link_libraries(
@@ -161,6 +169,7 @@ target_link_libraries(
         ${JAS_LIB}
         ${GUMBO_LIB}
         dl
+        antiword
 )
 
 target_include_directories(
@@ -183,4 +192,8 @@ if (BUILD_TESTS)
     add_executable(scan_a_test test/main.cpp test/test_util.cpp test/test_util.h)
     target_compile_options(scan_a_test PRIVATE -g -fsanitize=address -fno-omit-frame-pointer)
     target_link_libraries(scan_a_test PRIVATE GTest::gtest GTest::gtest_main -fsanitize=address scan)
+
+    add_executable(scan_test test/main.cpp test/test_util.cpp test/test_util.h)
+    target_compile_options(scan_test PRIVATE -g -fno-omit-frame-pointer)
+    target_link_libraries(scan_test PRIVATE GTest::gtest GTest::gtest_main scan)
 endif()

@@ -273,7 +273,7 @@ static int text_buffer_append_string(text_buffer_t *buf, const char *str, size_t
     return 0;
 }
 
-static int text_buffer_append_string0(text_buffer_t *buf, char *str) {
+static int text_buffer_append_string0(text_buffer_t *buf, const char *str) {
     return text_buffer_append_string(buf, str, strlen(str));
 }
 

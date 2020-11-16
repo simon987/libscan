@@ -166,15 +166,8 @@ void append_tag_meta_if_not_exists(scan_media_ctx_t *ctx, document_t *doc, AVDic
     text_buffer_destroy(&tex);
 }
 
-#define APPEND_TAG_META(doc, tag_, keyname) \
-    text_buffer_t tex = text_buffer_create(-1); \
-    text_buffer_append_string0(&tex, tag_->value); \
-    text_buffer_terminate_string(&tex); \
-    meta_line_t *meta_tag = malloc(sizeof(meta_line_t) + tex.dyn_buffer.cur); \
-    meta_tag->key = keyname; \
-    strcpy(meta_tag->str_val, tex.dyn_buffer.buf); \
-    APPEND_META(doc, meta_tag) \
-    text_buffer_destroy(&tex);
+#define APPEND_TAG_META(keyname) \
+    APPEND_UTF8_META(doc, keyname, tag->value)
 
 #define STRCPY_TOLOWER(dst, str) \
     strncpy(dst, str, sizeof(dst)); \
@@ -190,17 +183,17 @@ static void append_audio_meta(AVFormatContext *pFormatCtx, document_t *doc) {
         STRCPY_TOLOWER(key, tag->key)
 
         if (strcmp(key, "artist") == 0) {
-            APPEND_TAG_META(doc, tag, MetaArtist)
+            APPEND_TAG_META(MetaArtist)
         } else if (strcmp(key, "genre") == 0) {
-            APPEND_TAG_META(doc, tag, MetaGenre)
+            APPEND_TAG_META(MetaGenre)
         } else if (strcmp(key, "title") == 0) {
-            APPEND_TAG_META(doc, tag, MetaTitle)
+            APPEND_TAG_META(MetaTitle)
         } else if (strcmp(key, "album_artist") == 0) {
-            APPEND_TAG_META(doc, tag, MetaAlbumArtist)
+            APPEND_TAG_META(MetaAlbumArtist)
         } else if (strcmp(key, "album") == 0) {
-            APPEND_TAG_META(doc, tag, MetaAlbum)
+            APPEND_TAG_META(MetaAlbum)
         } else if (strcmp(key, "comment") == 0) {
-            APPEND_TAG_META(doc, tag, MetaContent)
+            APPEND_TAG_META(MetaContent)
         }
     }
 }
@@ -244,25 +237,25 @@ append_video_meta(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVFrame *f
             if (strcmp(key, "artist") == 0) {
                 append_tag_meta_if_not_exists(ctx, doc, tag, MetaArtist);
             } else if (strcmp(tag->key, "ImageDescription") == 0) {
-                APPEND_TAG_META(doc, tag, MetaContent)
+                APPEND_TAG_META(MetaContent)
             } else if (strcmp(tag->key, "Make") == 0) {
-                APPEND_TAG_META(doc, tag, MetaExifMake)
+                APPEND_TAG_META(MetaExifMake)
             } else if (strcmp(tag->key, "Model") == 0) {
-                APPEND_TAG_META(doc, tag, MetaExifModel)
+                APPEND_TAG_META(MetaExifModel)
             } else if (strcmp(tag->key, "Software") == 0) {
-                APPEND_TAG_META(doc, tag, MetaExifSoftware)
+                APPEND_TAG_META(MetaExifSoftware)
             } else if (strcmp(tag->key, "FNumber") == 0) {
-                APPEND_TAG_META(doc, tag, MetaExifFNumber)
+                APPEND_TAG_META(MetaExifFNumber)
             } else if (strcmp(tag->key, "FocalLength") == 0) {
-                APPEND_TAG_META(doc, tag, MetaExifFocalLength)
+                APPEND_TAG_META(MetaExifFocalLength)
             } else if (strcmp(tag->key, "UserComment") == 0) {
-                APPEND_TAG_META(doc, tag, MetaExifUserComment)
+                APPEND_TAG_META(MetaExifUserComment)
             } else if (strcmp(tag->key, "ISOSpeedRatings") == 0) {
-                APPEND_TAG_META(doc, tag, MetaExifIsoSpeedRatings)
+                APPEND_TAG_META(MetaExifIsoSpeedRatings)
             } else if (strcmp(tag->key, "ExposureTime") == 0) {
-                APPEND_TAG_META(doc, tag, MetaExifExposureTime)
+                APPEND_TAG_META(MetaExifExposureTime)
             } else if (strcmp(tag->key, "DateTime") == 0) {
-                APPEND_TAG_META(doc, tag, MetaExifDateTime)
+                APPEND_TAG_META(MetaExifDateTime)
             }
         }
     }
