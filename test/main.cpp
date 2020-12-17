@@ -786,6 +786,27 @@ TEST(Msdoc, Test4Pdf) {
     cleanup(&doc, &f);
 }
 
+TEST(Msdoc, TestFuzz1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/msdoc/fuzz_ole.doc", &f, &doc);
+
+    size_t buf_len;
+    char *buf = (char *) read_all(&f, &buf_len);
+
+    for (int i = 0; i < 1000; i++) {
+        size_t buf_len_copy = buf_len;
+        char *buf_copy = (char*)malloc(buf_len);
+        memcpy(buf_copy, buf, buf_len);
+
+        fuzz_buffer(buf_copy, &buf_len_copy, 3, 8, 5);
+        FILE *file = fmemopen(buf_copy, buf_len_copy, "rb");
+        parse_msdoc_text(&msdoc_text_ctx, &f, &doc, file, buf_copy, buf_len_copy);
+    }
+    free(buf);
+    cleanup(&doc, &f);
+}
+
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
@@ -833,7 +854,7 @@ int main(int argc, char **argv) {
     media_ctx.store = counter_store;
     media_ctx.tn_size = 500;
     media_ctx.tn_qscale = 1.0;
-    media_ctx.max_media_buffer = (long)2000 * (long)1024 * (long)1024;
+    media_ctx.max_media_buffer = (long) 2000 * (long) 1024 * (long) 1024;
 
     ooxml_500_ctx.content_size = 500;
     ooxml_500_ctx.log = noop_log;

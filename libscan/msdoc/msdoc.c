@@ -6,22 +6,7 @@
 
 #include "../ebook/ebook.h"
 
-void parse_msdoc_text(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc) {
-
-    // Open file
-    size_t buf_len;
-    char *buf = read_all(f, &buf_len);
-    if (buf == NULL) {
-        CTX_LOG_ERROR(f->filepath, "read_all() failed")
-        return;
-    }
-
-    FILE *file_in = fmemopen(buf, buf_len, "rb");
-    if (file_in == NULL) {
-        free(buf);
-        CTX_LOG_ERRORF(f->filepath, "fmemopen() failed (%d)", errno)
-        return;
-    }
+void parse_msdoc_text(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc, FILE *file_in, void* buf, size_t buf_len) {
 
     // Open word doc
     options_type *opts = direct_vGetOptions();
@@ -88,7 +73,7 @@ void parse_msdoc_text(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc) {
     free(out_buf);
 }
 
-void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc) {
+void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc, FILE *file, void* buf, size_t buf_len) {
 
     scan_ebook_ctx_t ebook_ctx = {
             .content_size = ctx->content_size,
@@ -98,20 +83,6 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc) {
             .store = ctx->store,
     };
 
-    // Open file
-    size_t buf_len;
-    char *buf = read_all(f, &buf_len);
-    if (buf == NULL) {
-        CTX_LOG_ERROR(f->filepath, "read_all() failed")
-        return;
-    }
-
-    FILE *file = fmemopen(buf, buf_len, "rb");
-    if (file == NULL) {
-        free(buf);
-        CTX_LOG_ERRORF(f->filepath, "fmemopen() failed (%d)", errno)
-        return;
-    }
     // Open word doc
 
     options_type *opts = direct_vGetOptions();
@@ -157,9 +128,24 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc) {
 }
 
 void parse_msdoc(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc) {
+
+    size_t buf_len;
+    char *buf = read_all(f, &buf_len);
+    if (buf == NULL) {
+        CTX_LOG_ERROR(f->filepath, "read_all() failed")
+        return;
+    }
+
+    FILE *file = fmemopen(buf, buf_len, "rb");
+    if (file == NULL) {
+        free(buf);
+        CTX_LOG_ERRORF(f->filepath, "fmemopen() failed (%d)", errno)
+        return;
+    }
+
     if (ctx->tn_size > 0) {
-        parse_msdoc_pdf(ctx, f, doc);
+        parse_msdoc_pdf(ctx, f, doc, file, buf, buf_len);
     } else {
-        parse_msdoc_text(ctx, f, doc);
+        parse_msdoc_text(ctx, f, doc, file, buf, buf_len);
     }
 }

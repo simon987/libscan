@@ -42,4 +42,6 @@ meta_line_t *get_meta_from(meta_line_t *meta, metakey key);
 
 void destroy_doc(document_t *doc);
 
+void fuzz_buffer(char *buf, size_t *buf_len, int width, int n, int trunc_p);
+
 #endif
