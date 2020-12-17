@@ -215,15 +215,19 @@ static void text_buffer_terminate_string(text_buffer_t *buf) {
 
 // Naive UTF16 -> ascii conversion
 static int text_buffer_append_string16_le(text_buffer_t *buf, const char *str, size_t len) {
+    int ret = 0;
     for (int i = 1; i < len; i += 2) {
-        text_buffer_append_char(buf, str[i]);
+        ret = text_buffer_append_char(buf, str[i]);
     }
+    return ret;
 }
 
 static int text_buffer_append_string16_be(text_buffer_t *buf, const char *str, size_t len) {
+    int ret = 0;
     for (int i = 0; i < len; i += 2) {
-        text_buffer_append_char(buf, str[i]);
+        ret = text_buffer_append_char(buf, str[i]);
     }
+    return ret;
 }
 
 #define UTF8_END_OF_STRING \
