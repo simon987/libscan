@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <uuid/uuid.h>
+#include <openssl/md5.h>
 
 #include "macros.h"
 
@@ -106,6 +107,7 @@ typedef struct document {
     int mtime;
     short base;
     short ext;
+    unsigned char path_md5[MD5_DIGEST_LENGTH];
     meta_line_t *meta_head;
     meta_line_t *meta_tail;
     char *filepath;

@@ -1,6 +1,5 @@
 #include "ooxml.h"
 
-#include "../util.h"
 #include <archive.h>
 #include <archive_entry.h>
 #include <libxml/xmlstring.h>
@@ -106,7 +105,7 @@ static int read_part(scan_ooxml_ctx_t *ctx, struct archive *a, text_buffer_t *bu
 }
 
 __always_inline
-static int read_doc_props(scan_ooxml_ctx_t *ctx, struct archive *a, text_buffer_t *buf, document_t *doc) {
+static int read_doc_props(scan_ooxml_ctx_t *ctx, struct archive *a, document_t *doc) {
     xmlDoc *xml = xmlReadIO(xml_io_read, xml_io_close, a, "/", NULL,
                             XML_PARSE_RECOVER | XML_PARSE_NOWARNING | XML_PARSE_NOERROR | XML_PARSE_NONET);
 
@@ -158,7 +157,7 @@ void read_thumbnail(scan_ooxml_ctx_t *ctx, document_t *doc, struct archive *a, s
     archive_read_data(a, buf, entry_size);
 
     APPEND_TN_META(doc, 1, 1) // Size unknown
-    ctx->store((char *) doc->uuid, sizeof(doc->uuid), buf, entry_size);
+    ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), buf, entry_size);
     free(buf);
 }
 
@@ -198,7 +197,7 @@ void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
                     buffer_full = TRUE;
                 }
             } else if (strcmp(path, "docProps/core.xml") == 0) {
-                if (read_doc_props(ctx, a, &tex, doc) != 0) {
+                if (read_doc_props(ctx, a, doc) != 0) {
                     break;
                 }
             } else if (strcmp(path, "docProps/thumbnail.jpeg") == 0) {

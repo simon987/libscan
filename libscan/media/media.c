@@ -1,8 +1,4 @@
 #include "media.h"
-
-#include "../util.h"
-
-
 #include <ctype.h>
 
 #define MIN_SIZE 32
@@ -323,7 +319,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
         //Seek
         if (stream->nb_frames > 1 && stream->codecpar->codec_id != AV_CODEC_ID_GIF) {
-            int seek_ret = 0;
+            int seek_ret;
             for (int i = 20; i >= 0; i--) {
                 seek_ret = av_seek_frame(pFormatCtx, video_stream,
                                          stream->duration * 0.10, 0);
@@ -356,7 +352,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
         if (scaled_frame == STORE_AS_IS) {
             APPEND_TN_META(doc, frame_and_packet->frame->width, frame_and_packet->frame->height)
-            ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) frame_and_packet->packet->data, frame_and_packet->packet->size);
+            ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) frame_and_packet->packet->data, frame_and_packet->packet->size);
         } else {
             // Encode frame to jpeg
             AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height,
@@ -369,7 +365,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
             // Save thumbnail
             APPEND_TN_META(doc, scaled_frame->width, scaled_frame->height)
-            ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
+            ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) jpeg_packet.data, jpeg_packet.size);
 
             avcodec_free_context(&jpeg_encoder);
             av_packet_unref(&jpeg_packet);
@@ -608,7 +604,7 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, docu
 
     if (scaled_frame == STORE_AS_IS) {
         APPEND_TN_META(doc, frame_and_packet->frame->width, frame_and_packet->frame->height)
-        ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) frame_and_packet->packet->data, frame_and_packet->packet->size);
+        ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) frame_and_packet->packet->data, frame_and_packet->packet->size);
     } else {
         // Encode frame to jpeg
         AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height,
@@ -621,7 +617,7 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, docu
 
         // Save thumbnail
         APPEND_TN_META(doc, scaled_frame->width, scaled_frame->height)
-        ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
+        ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) jpeg_packet.data, jpeg_packet.size);
 
         av_packet_unref(&jpeg_packet);
         avcodec_free_context(&jpeg_encoder);

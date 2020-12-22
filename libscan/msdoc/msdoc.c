@@ -6,7 +6,7 @@
 
 #include "../ebook/ebook.h"
 
-void parse_msdoc_text(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc, FILE *file_in, void* buf, size_t buf_len) {
+void parse_msdoc_text(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file_in, void* buf, size_t buf_len) {
 
     // Open word doc
     options_type *opts = direct_vGetOptions();
@@ -73,7 +73,7 @@ void parse_msdoc_text(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc, FILE *
     free(out_buf);
 }
 
-void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc, FILE *file, void* buf, size_t buf_len) {
+void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void* buf, size_t buf_len) {
 
     scan_ebook_ctx_t ebook_ctx = {
             .content_size = ctx->content_size,
@@ -115,7 +115,7 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc, FILE *f
         return;
     }
 
-    int ret = bWordDecryptor(file, buf_len, diag);
+    bWordDecryptor(file, buf_len, diag);
     vDestroyDiagram(diag);
 
     fclose(file_out);
@@ -144,8 +144,8 @@ void parse_msdoc(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc) {
     }
 
     if (ctx->tn_size > 0) {
-        parse_msdoc_pdf(ctx, f, doc, file, buf, buf_len);
+        parse_msdoc_pdf(ctx, doc, file, buf, buf_len);
     } else {
-        parse_msdoc_text(ctx, f, doc, file, buf, buf_len);
+        parse_msdoc_text(ctx, doc, file, buf, buf_len);
     }
 }

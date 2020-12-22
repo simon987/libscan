@@ -157,7 +157,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
 
     APPEND_TN_META(doc, pixmap->w, pixmap->h)
-    ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
+    ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) jpeg_packet.data, jpeg_packet.size);
 
     av_packet_unref(&jpeg_packet);
     av_free(*scaled_frame->data);
@@ -174,14 +174,14 @@ void fz_err_callback(void *user, const char *message) {
     document_t *doc = (document_t *) user;
 
     const scan_ebook_ctx_t *ctx = &thread_ctx;
-    CTX_LOG_WARNINGF(doc->filepath, "FZ: %s", message);
+    CTX_LOG_WARNINGF(doc->filepath, "FZ: %s", message)
 }
 
 void fz_warn_callback(void *user, const char *message) {
     document_t *doc = (document_t *) user;
 
     const scan_ebook_ctx_t *ctx = &thread_ctx;
-    CTX_LOG_DEBUGF(doc->filepath, "FZ: %s", message);
+    CTX_LOG_DEBUGF(doc->filepath, "FZ: %s", message)
 }
 
 static void init_fzctx(fz_context *fzctx, document_t *doc) {

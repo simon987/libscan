@@ -2,7 +2,6 @@
 #include <libraw/libraw.h>
 
 #include "../media/media.h"
-#include <fcntl.h>
 #include <unistd.h>
 
 
@@ -71,7 +70,7 @@ int store_thumbnail_rgb24(scan_raw_ctx_t *ctx, libraw_processed_image_t *img, do
     avcodec_receive_packet(jpeg_encoder, &jpeg_packet);
 
     APPEND_TN_META(doc, scaled_frame->width, scaled_frame->height)
-    ctx->store((char *) doc->uuid, sizeof(doc->uuid), (char *) jpeg_packet.data, jpeg_packet.size);
+    ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) jpeg_packet.data, jpeg_packet.size);
 
     av_packet_unref(&jpeg_packet);
     av_free(*scaled_frame->data);

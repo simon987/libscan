@@ -5,8 +5,6 @@
 #include <string.h>
 #include <fcntl.h>
 
-#define MAX_SUBFILE_SIZE (long)(10000000000)
-
 
 int should_parse_filtered_file(const char *filepath, int ext) {
     char tmp[PATH_MAX * 2];
@@ -110,7 +108,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
         meta_line_t *meta_list = malloc(sizeof(meta_line_t) + buf.cur);
         meta_list->key = MetaContent;
         strcpy(meta_list->str_val, buf.buf);
-        APPEND_META(doc, meta_list);
+        APPEND_META(doc, meta_list)
         dyn_buffer_destroy(&buf);
 
     } else {
