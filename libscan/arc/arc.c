@@ -123,7 +123,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
         sub_job->vfile.is_fs_file = FALSE;
         sub_job->vfile.log = ctx->log;
         sub_job->vfile.logf = ctx->logf;
-        memcpy(sub_job->parent, doc->uuid, sizeof(uuid_t));
+        memcpy(sub_job->parent, doc->path_md5, MD5_DIGEST_LENGTH);
 
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             sub_job->vfile.info = *archive_entry_stat(entry);

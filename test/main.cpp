@@ -801,7 +801,7 @@ TEST(Msdoc, TestFuzz1) {
 
         fuzz_buffer(buf_copy, &buf_len_copy, 3, 8, 5);
         FILE *file = fmemopen(buf_copy, buf_len_copy, "rb");
-        parse_msdoc_text(&msdoc_text_ctx, &f, &doc, file, buf_copy, buf_len_copy);
+        parse_msdoc_text(&msdoc_text_ctx, &doc, file, buf_copy, buf_len_copy);
     }
     free(buf);
     cleanup(&doc, &f);

@@ -7,7 +7,6 @@
 
 #include <stdio.h>
 #include <sys/stat.h>
-#include <uuid/uuid.h>
 #include <openssl/md5.h>
 
 #include "macros.h"
@@ -26,7 +25,7 @@
 
 #define IS_META_INT(key) (key & META_INT_MASK) == META_INT_MASK
 #define IS_META_LONG(key) (key & META_LONG_MASK) == META_LONG_MASK
-#define IS_META_STR(meta) (meta->key & META_STR_MASK) == META_STR_MASK
+#define IS_META_STR(key) (key & META_STR_MASK) == META_STR_MASK
 
 typedef void (*store_callback_t)(char *key, size_t key_len, char *buf, size_t buf_len);
 typedef void (*logf_callback_t)(const char *filepath, int level, char *format, ...);
@@ -100,14 +99,13 @@ typedef struct meta_line {
 
 
 typedef struct document {
-    unsigned char uuid[16];
-    unsigned long ino;
+    unsigned char path_md5[MD5_DIGEST_LENGTH];
     unsigned long size;
     unsigned int mime;
     int mtime;
     short base;
     short ext;
-    unsigned char path_md5[MD5_DIGEST_LENGTH];
+    char has_parent;
     meta_line_t *meta_head;
     meta_line_t *meta_tail;
     char *filepath;
@@ -148,7 +146,7 @@ typedef struct parse_job_t {
     int base;
     int ext;
     struct vfile vfile;
-    uuid_t parent;
+    unsigned char parent[MD5_DIGEST_LENGTH];
     char filepath[1];
 } parse_job_t;
 

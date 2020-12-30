@@ -4,7 +4,6 @@
 #include "../libscan/scan.h"
 #include <fcntl.h>
 #include <unistd.h>
-#include <uuid/uuid.h>
 
 void load_file(const char *filepath, vfile_t *f);
 void load_mem(void *mem, size_t size, vfile_t *f);
