@@ -85,8 +85,60 @@ static void frame_and_packet_free(frame_and_packet_t *frame_and_packet) {
 }
 
 __always_inline
-static frame_and_packet_t *read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVCodecContext *decoder, int stream_idx,
-                           document_t *doc) {
+static void read_subtitles(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, int stream_idx, document_t *doc) {
+
+    text_buffer_t tex = text_buffer_create(-1);
+
+    AVPacket packet;
+    AVSubtitle subtitle;
+
+    AVCodec *subtitle_codec = avcodec_find_decoder(pFormatCtx->streams[stream_idx]->codecpar->codec_id);
+    AVCodecContext *decoder = avcodec_alloc_context3(subtitle_codec);
+    avcodec_parameters_to_context(decoder, pFormatCtx->streams[stream_idx]->codecpar);
+    avcodec_open2(decoder, subtitle_codec, NULL);
+
+    decoder->sub_text_format = FF_SUB_TEXT_FMT_ASS;
+
+    int got_sub;
+
+    while (1) {
+        int read_frame_ret = av_read_frame(pFormatCtx, &packet);
+
+        if (read_frame_ret != 0) {
+            break;
+        }
+
+        if (packet.stream_index != stream_idx) {
+            av_packet_unref(&packet);
+            continue;
+        }
+
+        avcodec_decode_subtitle2(decoder, &subtitle, &got_sub, &packet);
+
+        if (got_sub) {
+            for (int i = 0; i < subtitle.num_rects; i++) {
+                const char *text = subtitle.rects[i]->ass;
+
+                char *idx = strstr(text, "\\N");
+                if (idx != NULL && strlen(idx + 2) > 1) {
+                    text_buffer_append_string0(&tex, idx + 2);
+                    text_buffer_append_char(&tex, ' ');
+                }
+            }
+            avsubtitle_free(&subtitle);
+        }
+    }
+
+    text_buffer_terminate_string(&tex);
+
+    APPEND_STR_META(doc, MetaContent, tex.dyn_buffer.buf)
+    text_buffer_destroy(&tex);
+}
+
+__always_inline
+static frame_and_packet_t *
+read_frame(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVCodecContext *decoder, int stream_idx,
+           document_t *doc) {
 
     frame_and_packet_t *result = calloc(1, sizeof(frame_and_packet_t));
     result->packet = av_packet_alloc();
@@ -261,6 +313,7 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
     int video_stream = -1;
     int audio_stream = -1;
+    int subtitle_stream = -1;
 
     avformat_find_stream_info(pFormatCtx, NULL);
 
@@ -299,7 +352,13 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
                 video_stream = i;
             }
+        } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) {
+            subtitle_stream = i;
         }
+    }
+
+    if (subtitle_stream != -1) {
+        read_subtitles(ctx, pFormatCtx, subtitle_stream, doc);
     }
 
     if (video_stream != -1 && ctx->tn_size > 0) {
@@ -352,7 +411,8 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
         if (scaled_frame == STORE_AS_IS) {
             APPEND_TN_META(doc, frame_and_packet->frame->width, frame_and_packet->frame->height)
-            ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) frame_and_packet->packet->data, frame_and_packet->packet->size);
+            ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) frame_and_packet->packet->data,
+                       frame_and_packet->packet->size);
         } else {
             // Encode frame to jpeg
             AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height,
@@ -532,7 +592,7 @@ void init_media() {
     av_log_set_level(AV_LOG_QUIET);
 }
 
-int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, document_t *doc, const char *url) {
+int store_image_thumbnail(scan_media_ctx_t *ctx, void *buf, size_t buf_len, document_t *doc, const char *url) {
     memfile_t memfile;
     AVIOContext *io_ctx = NULL;
 
@@ -604,7 +664,8 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void* buf, size_t buf_len, docu
 
     if (scaled_frame == STORE_AS_IS) {
         APPEND_TN_META(doc, frame_and_packet->frame->width, frame_and_packet->frame->height)
-        ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) frame_and_packet->packet->data, frame_and_packet->packet->size);
+        ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) frame_and_packet->packet->data,
+                   frame_and_packet->packet->size);
     } else {
         // Encode frame to jpeg
         AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(scaled_frame->width, scaled_frame->height,
