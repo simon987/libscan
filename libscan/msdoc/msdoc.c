@@ -88,7 +88,7 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void* b
     opts->bHideHiddenText = 1;
     opts->bRemoveRemovedText = 1;
     opts->bUseLandscape = 0;
-    opts->eEncoding = encoding_latin_2;
+    opts->eEncoding = encoding_latin_1;
     opts->iPageHeight = 842; // A4
     opts->iPageWidth = 595;
     opts->eImageLevel = level_ps_3;
