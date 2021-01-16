@@ -255,7 +255,7 @@ void fill_image(fz_context *fzctx, UNUSED(fz_device *dev),
     }
 }
 
-void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const char *mime_str, document_t *doc) {
+void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const char *mime_str, document_t *doc, int tn_only) {
 
     fz_context *fzctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
     thread_ctx = *ctx;
@@ -285,26 +285,6 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
         return;
     }
 
-    char title[8192] = {'\0',};
-    fz_try(fzctx)
-        fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_TITLE, title, sizeof(title));
-    fz_catch(fzctx)
-        ;
-
-    if (strlen(title) > 0) {
-        APPEND_UTF8_META(doc, MetaTitle, title)
-    }
-
-    char author[4096] = {'\0',};
-    fz_try(fzctx)
-        fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_AUTHOR, author, sizeof(author));
-    fz_catch(fzctx)
-        ;
-
-    if (strlen(author) > 0) {
-        APPEND_UTF8_META(doc, MetaAuthor, author)
-    }
-
     int page_count = -1;
     fz_var(err);
     fz_try(fzctx)
@@ -329,6 +309,33 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
             fz_drop_context(fzctx);
             return;
         }
+    }
+
+    if (tn_only) {
+        fz_drop_stream(fzctx, stream);
+        fz_drop_document(fzctx, fzdoc);
+        fz_drop_context(fzctx);
+        return;
+    }
+
+    char title[8192] = {'\0',};
+    fz_try(fzctx)
+                fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_TITLE, title, sizeof(title));
+    fz_catch(fzctx)
+        ;
+
+    if (strlen(title) > 0) {
+        APPEND_UTF8_META(doc, MetaTitle, title)
+    }
+
+    char author[4096] = {'\0',};
+    fz_try(fzctx)
+                fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_AUTHOR, author, sizeof(author));
+    fz_catch(fzctx)
+        ;
+
+    if (strlen(author) > 0) {
+        APPEND_UTF8_META(doc, MetaAuthor, author)
     }
 
 
@@ -425,6 +432,6 @@ void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char *mime_str, docume
         return;
     }
 
-    parse_ebook_mem(ctx, buf, buf_len, mime_str, doc);
+    parse_ebook_mem(ctx, buf, buf_len, mime_str, doc, FALSE);
     free(buf);
 }

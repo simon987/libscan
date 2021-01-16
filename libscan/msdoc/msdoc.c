@@ -22,7 +22,6 @@ void parse_msdoc_text(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file_in, voi
 
     int doc_word_version = iGuessVersionNumber(file_in, buf_len);
     if (doc_word_version < 0 || doc_word_version == 3) {
-        fclose(file_in);
         free(buf);
         return;
     }
@@ -68,7 +67,6 @@ void parse_msdoc_text(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file_in, voi
         text_buffer_destroy(&tex);
     }
 
-    fclose(file_in);
     free(buf);
     free(out_buf);
 }
@@ -84,7 +82,6 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void* b
     };
 
     // Open word doc
-
     options_type *opts = direct_vGetOptions();
     opts->iParagraphBreak = 74;
     opts->eConversionType = conversion_pdf;
@@ -98,7 +95,6 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void* b
 
     int doc_word_version = iGuessVersionNumber(file, buf_len);
     if (doc_word_version < 0 || doc_word_version == 3) {
-        fclose(file);
         free(buf);
         return;
     }
@@ -111,7 +107,6 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void* b
 
     diagram_type *diag = pCreateDiagram("antiword", NULL, file_out);
     if (diag == NULL) {
-        fclose(file);
         return;
     }
 
@@ -120,9 +115,8 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void* b
 
     fclose(file_out);
 
-    parse_ebook_mem(&ebook_ctx, out_buf, out_len, "application/pdf", doc);
+    parse_ebook_mem(&ebook_ctx, out_buf, out_len, "application/pdf", doc, TRUE);
 
-    fclose(file);
     free(buf);
     free(out_buf);
 }
@@ -144,8 +138,10 @@ void parse_msdoc(scan_msdoc_ctx_t *ctx, vfile_t *f, document_t *doc) {
     }
 
     if (ctx->tn_size > 0) {
-        parse_msdoc_pdf(ctx, doc, file, buf, buf_len);
-    } else {
-        parse_msdoc_text(ctx, doc, file, buf, buf_len);
+        char *buf_pdf = malloc(buf_len);
+        memcpy(buf_pdf, buf, buf_len);
+        parse_msdoc_pdf(ctx, doc, file, buf_pdf, buf_len);
     }
+    parse_msdoc_text(ctx, doc, file, buf, buf_len);
+    fclose(file);
 }

@@ -786,6 +786,34 @@ TEST(Msdoc, Test4Pdf) {
     cleanup(&doc, &f);
 }
 
+TEST(Msdoc, TestUtf8Pdf) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/msdoc/japanese.doc", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_msdoc(&msdoc_ctx, &f, &doc);
+
+    ASSERT_NE(get_meta(&doc, MetaContent), nullptr);
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "调查项目 A questionnaire") != nullptr);
+    ASSERT_NE(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Msdoc, TestUtf8Text) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/msdoc/japanese.doc", &f, &doc);
+
+    parse_msdoc(&msdoc_text_ctx, &f, &doc);
+
+    ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "调查项目 A questionnaire") != nullptr);
+
+    cleanup(&doc, &f);
+}
+
 TEST(Msdoc, TestFuzz1) {
     vfile_t f;
     document_t doc;
