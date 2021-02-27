@@ -595,6 +595,20 @@ TEST(Arc, Utf8) {
     cleanup(&doc, &f);
 }
 
+TEST(Arc, EncryptedZip) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/arc/encrypted.zip", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_archive(&arc_recurse_media_ctx, &f, &doc);
+
+    ASSERT_NE(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
 /* RAW */
 TEST(RAW, Panasonic) {
     vfile_t f;

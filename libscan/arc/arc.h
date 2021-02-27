@@ -20,6 +20,7 @@ typedef struct {
     log_callback_t log;
     logf_callback_t logf;
     store_callback_t store;
+    char passphrase[1024];
 } scan_arc_ctx_t;
 
 #define ARC_BUF_SIZE 8192
@@ -56,7 +57,7 @@ static int vfile_close_callback(struct archive *a, void *user_data) {
     return ARCHIVE_OK;
 }
 
-int arc_open(vfile_t *f, struct archive **a, arc_data_t *arc_data, int allow_recurse);
+int arc_open(scan_arc_ctx_t *ctx, vfile_t *f, struct archive **a, arc_data_t *arc_data, int allow_recurse);
 
 int should_parse_filtered_file(const char *filepath, int ext);
 

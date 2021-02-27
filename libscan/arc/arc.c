@@ -47,19 +47,25 @@ int arc_read(struct vfile *f, void *buf, size_t size) {
     return read;
 }
 
-int arc_open(vfile_t *f, struct archive **a, arc_data_t *arc_data, int allow_recurse) {
+int arc_open(scan_arc_ctx_t *ctx, vfile_t *f, struct archive **a, arc_data_t *arc_data, int allow_recurse) {
     arc_data->f = f;
 
     if (f->is_fs_file) {
         *a = archive_read_new();
         archive_read_support_filter_all(*a);
         archive_read_support_format_all(*a);
+        if (ctx->passphrase[0] != 0) {
+            archive_read_add_passphrase(*a, ctx->passphrase);
+        }
 
        return archive_read_open_filename(*a, f->filepath, ARC_BUF_SIZE);
     } else if (allow_recurse) {
         *a = archive_read_new();
         archive_read_support_filter_all(*a);
         archive_read_support_format_all(*a);
+        if (ctx->passphrase[0] != 0) {
+            archive_read_add_passphrase(*a, ctx->passphrase);
+        }
 
         return archive_read_open(
                 *a, arc_data,
@@ -80,7 +86,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
     arc_data_t arc_data;
     arc_data.f = f;
 
-    int ret = arc_open(f, &a, &arc_data, ctx->mode == ARC_MODE_RECURSE);
+    int ret = arc_open(ctx, f, &a, &arc_data, ctx->mode == ARC_MODE_RECURSE);
     if (ret == ARC_SKIPPED) {
         return SCAN_OK;
     }
