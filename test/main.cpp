@@ -602,7 +602,10 @@ TEST(Arc, EncryptedZip) {
 
     size_t size_before = store_size;
 
+    strcpy(arc_recurse_media_ctx.passphrase, "sist2");
     parse_archive(&arc_recurse_media_ctx, &f, &doc);
+
+    arc_recurse_media_ctx.passphrase[0] = '\0';
 
     ASSERT_NE(size_before, store_size);
 

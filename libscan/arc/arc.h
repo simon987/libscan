@@ -20,7 +20,7 @@ typedef struct {
     log_callback_t log;
     logf_callback_t logf;
     store_callback_t store;
-    char passphrase[1024];
+    char passphrase[4096];
 } scan_arc_ctx_t;
 
 #define ARC_BUF_SIZE 8192
