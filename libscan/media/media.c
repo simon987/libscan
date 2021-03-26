@@ -357,8 +357,13 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
         }
     }
 
-    if (subtitle_stream != -1) {
+    if (subtitle_stream != -1 && ctx->read_subtitles) {
         read_subtitles(ctx, pFormatCtx, subtitle_stream, doc);
+
+        // Reset stream
+        if (video_stream != -1) {
+            av_seek_frame(pFormatCtx, video_stream, 0, 0);
+        }
     }
 
     if (video_stream != -1 && ctx->tn_size > 0) {
