@@ -374,6 +374,36 @@ TEST(MediaImage, Mem2AsIs) {
     cleanup(&doc, &f);
 }
 
+TEST(MediaVideo, VidMkvSubDisabled) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/berd.mkv", &f, &doc);
+
+    size_t size_before = store_size;
+    parse_media(&media_ctx, &f, &doc);
+
+    ASSERT_NE(size_before, store_size);
+    ASSERT_EQ(get_meta(&doc, MetaContent), nullptr);
+
+    cleanup(&doc, &f);
+}
+
+TEST(MediaVideo, VidMkvSubEnabled) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/berd.mkv", &f, &doc);
+
+    size_t size_before = store_size;
+    media_ctx.read_subtitles = TRUE;
+    parse_media(&media_ctx, &f, &doc);
+    media_ctx.read_subtitles = FALSE;
+
+    ASSERT_NE(size_before, store_size);
+    ASSERT_NE(get_meta(&doc, MetaContent), nullptr);
+
+    cleanup(&doc, &f);
+}
+
 TEST(MediaVideo, Vid3Mp4) {
     vfile_t f;
     document_t doc;
