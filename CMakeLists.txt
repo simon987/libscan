@@ -31,7 +31,6 @@ add_library(
 set_target_properties(scan PROPERTIES LINKER_LANGUAGE C)
 
 set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib .so)
-target_link_directories(scan PUBLIC /usr/share/vcpkg/installed/x64-linux/lib/)
 
 find_package(LibArchive REQUIRED)
 find_package(BZip2 REQUIRED)
@@ -42,8 +41,6 @@ find_package(Tesseract CONFIG REQUIRED)
 find_package(OpenJPEG CONFIG REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_package(FFMPEG REQUIRED)
-#find_package(OpenSSL REQUIRED)
 find_package(LibLZMA REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -58,7 +55,7 @@ find_library(MUPDF_LIB NAMES liblibmupdf.a)
 find_library(CMS_LIB NAMES lcms)
 find_library(JAS_LIB NAMES jasper)
 find_library(GUMBO_LIB NAMES gumbo)
-find_library(GOMP_LIB NAMES libgomp.a gomp PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-linux-gnu/9/ /usr/lib/gcc/x86_64-linux-gnu/10/ /usr/lib/gcc/aarch64-linux-gnu/7/)
+find_library(GOMP_LIB NAMES libgomp.a gomp PATHS /usr/lib/gcc/x86_64-linux-gnu/5/ /usr/lib/gcc/x86_64-linux-gnu/9/ /usr/lib/gcc/x86_64-linux-gnu/10/ /usr/lib/gcc/aarch64-linux-gnu/7/ /usr/lib/gcc/x86_64-linux-gnu/7/)
 
 
 target_compile_options(
@@ -112,6 +109,7 @@ ExternalProject_Add(
 )
 
 SET(FFMPEG_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_ffmpeg/src/ffmpeg)
+SET(FFMPEG_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_ffmpeg/src/ffmpeg)
 
 add_dependencies(
         scan
