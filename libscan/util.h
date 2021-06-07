@@ -133,11 +133,11 @@ static void dyn_buffer_write_int(dyn_buffer_t *buf, int d) {
     buf->cur += sizeof(int);
 }
 
-static void dyn_buffer_write_short(dyn_buffer_t *buf, short s) {
+static void dyn_buffer_write_short(dyn_buffer_t *buf, uint16_t s) {
     grow_buffer_small(buf);
 
-    *(short *) (buf->buf + buf->cur) = s;
-    buf->cur += sizeof(short);
+    *(uint16_t *) (buf->buf + buf->cur) = s;
+    buf->cur += sizeof(uint16_t);
 }
 
 static void dyn_buffer_write_long(dyn_buffer_t *buf, unsigned long l) {

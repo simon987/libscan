@@ -4,6 +4,7 @@ project(scan)
 set(CMAKE_C_STANDARD 11)
 
 option(BUILD_TESTS "Build tests" off)
+option(SIST_FAKE_STORE "Disable IO operations of LMDB stores for debugging purposes" 0)
 
 add_subdirectory(third-party/antiword)
 add_compile_definitions(
@@ -87,25 +88,31 @@ ExternalProject_Add(
 SET(MOBI_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libmobi/src/libmobi/src/.libs/)
 SET(MOBI_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libmobi/src/libmobi/src/)
 
+if (SIST_DEBUG)
+    SET(FFMPEG_DEBUG "--enable-debug=3" "--disable-optimizations")
+else()
+    SET(FFMPEG_DEBUG "")
+endif()
+
 ExternalProject_Add(
         ffmpeg
         GIT_REPOSITORY https://git.ffmpeg.org/ffmpeg.git
-        GIT_TAG "master"
+        GIT_TAG "n4.3.2"
 
         UPDATE_COMMAND ""
         PATCH_COMMAND ""
         TEST_COMMAND ""
         CONFIGURE_COMMAND ./configure --disable-shared --enable-static --disable-ffmpeg --disable-ffplay
         --disable-ffprobe --disable-doc --disable-manpages --disable-postproc --disable-avfilter --disable-alsa
-        --disable-lzma --disable-xlib --disable-debug --disable-vdpau --disable-vaapi --disable-sdl2
-        --disable-network --extra-cflags=-fPIC
+        --disable-lzma --disable-xlib --disable-vdpau --disable-vaapi --disable-sdl2
+        --disable-network  ${FFMPEG_DEBUG}
         INSTALL_COMMAND ""
 
         PREFIX "third-party/ext_ffmpeg"
         SOURCE_DIR "third-party/ext_ffmpeg/src/ffmpeg"
         BINARY_DIR "third-party/ext_ffmpeg/src/ffmpeg"
 
-        BUILD_COMMAND ${MAKE_EXE} -j 8 --silent
+        BUILD_COMMAND ${MAKE_EXE} -j33 --silent
 )
 
 SET(FFMPEG_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_ffmpeg/src/ffmpeg)

@@ -134,7 +134,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     av_image_fill_arrays(scaled_frame->data, scaled_frame->linesize, dst_buf, AV_PIX_FMT_YUV420P, pixmap->w, pixmap->h, 1);
 
     const uint8_t *in_data[1] = {pixmap->samples};
-    int in_line_size[1] = {pixmap->stride};
+    int in_line_size[1] = {(int) pixmap->stride};
 
     sws_scale(sws_ctx,
               in_data, in_line_size,
@@ -223,7 +223,7 @@ static int read_stext_block(fz_stext_block *block, text_buffer_t *tex) {
     return 0;
 }
 
-#define IS_VALID_BPP(d) (d==1 || d==2 || d==4 || d==8 || d==16 || d==24 || d==32)
+#define IS_VALID_BPP(d) ((d)==1 || (d)==2 || (d)==4 || (d)==8 || (d)==16 || (d)==24 || (d)==32)
 
 void fill_image(fz_context *fzctx, UNUSED(fz_device *dev),
                 fz_image *img, UNUSED(fz_matrix ctm), UNUSED(float alpha),
@@ -257,7 +257,7 @@ void fill_image(fz_context *fzctx, UNUSED(fz_device *dev),
 
 void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const char *mime_str, document_t *doc, int tn_only) {
 
-    fz_context *fzctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
+    fz_context *fzctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
     thread_ctx = *ctx;
 
     init_fzctx(fzctx, doc);

@@ -319,6 +319,22 @@ TEST(Comic, ComicCbrFilters) {
 
 /* Media (image) */
 
+TEST(MediaImage, ExifGps1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/exif_GPS.jpg", &f, &doc);
+
+    parse_media(&media_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaExifGpsLatitudeRef)->str_val, "N");
+    ASSERT_STREQ(get_meta(&doc, MetaExifGpsLatitudeDMS)->str_val, "48:1 , 56585399:1000000, 0:1");
+
+    ASSERT_STREQ(get_meta(&doc, MetaExifGpsLongitudeRef)->str_val, "E");
+    ASSERT_STREQ(get_meta(&doc, MetaExifGpsLongitudeDMS)->str_val, "9:1 , 28046900:1000000, 0:1");
+
+    cleanup(&doc, &f);
+}
+
 TEST(MediaImage, Exif1) {
     vfile_t f;
     document_t doc;
@@ -662,6 +678,23 @@ TEST(RAW, Panasonic) {
     ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 5200);
     ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 3904);
     ASSERT_NE(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
+TEST(RAW, ExifGps1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/raw/exif_gps.DNG", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_raw(&raw_ctx, &f, &doc);
+
+    ASSERT_NE(size_before, store_size);
+
+    ASSERT_STREQ(get_meta(&doc, MetaExifGpsLatitudeDec)->str_val, "48.943088531494141");
+    ASSERT_STREQ(get_meta(&doc, MetaExifGpsLongitudeDec)->str_val, "9.467448234558105");
 
     cleanup(&doc, &f);
 }

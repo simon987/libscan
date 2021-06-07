@@ -13,9 +13,9 @@
 
 #define SIST_SWS_ALGO SWS_LANCZOS
 
-#define META_INT_MASK 0x80
-#define META_STR_MASK 0x40
-#define META_LONG_MASK 0x20
+#define META_INT_MASK 0x8000
+#define META_STR_MASK 0x4000
+#define META_LONG_MASK 0x2000
 
 #define UNUSED(x) __attribute__((__unused__))  x
 
@@ -85,6 +85,12 @@ enum metakey {
     MetaModifiedBy = META_STR(25),
     MetaThumbnail = META_STR(26),
     MetaPages = META_INT(27),
+    MetaExifGpsLongitudeDMS = META_STR(28),
+    MetaExifGpsLongitudeRef = META_STR(29),
+    MetaExifGpsLatitudeDMS = META_STR(30),
+    MetaExifGpsLatitudeRef = META_STR(31),
+    MetaExifGpsLatitudeDec = META_STR(32),
+    MetaExifGpsLongitudeDec = META_STR(33),
 };
 
 typedef struct meta_line {

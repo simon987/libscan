@@ -127,12 +127,15 @@ static void read_subtitles(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, i
             }
             avsubtitle_free(&subtitle);
         }
+
+        av_packet_unref(&packet);
     }
 
     text_buffer_terminate_string(&tex);
 
     APPEND_STR_META(doc, MetaContent, tex.dyn_buffer.buf)
     text_buffer_destroy(&tex);
+    avcodec_free_context(&decoder);
 }
 
 __always_inline
@@ -284,26 +287,34 @@ append_video_meta(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVFrame *f
 
             if (strcmp(key, "artist") == 0) {
                 append_tag_meta_if_not_exists(ctx, doc, tag, MetaArtist);
-            } else if (strcmp(tag->key, "ImageDescription") == 0) {
+            } else if (strcmp(key, "imagedescription") == 0) {
                 APPEND_TAG_META(MetaContent)
-            } else if (strcmp(tag->key, "Make") == 0) {
+            } else if (strcmp(key, "make") == 0) {
                 APPEND_TAG_META(MetaExifMake)
-            } else if (strcmp(tag->key, "Model") == 0) {
+            } else if (strcmp(key, "model") == 0) {
                 APPEND_TAG_META(MetaExifModel)
-            } else if (strcmp(tag->key, "Software") == 0) {
+            } else if (strcmp(key, "software") == 0) {
                 APPEND_TAG_META(MetaExifSoftware)
-            } else if (strcmp(tag->key, "FNumber") == 0) {
+            } else if (strcmp(key, "fnumber") == 0) {
                 APPEND_TAG_META(MetaExifFNumber)
-            } else if (strcmp(tag->key, "FocalLength") == 0) {
+            } else if (strcmp(key, "focallength") == 0) {
                 APPEND_TAG_META(MetaExifFocalLength)
-            } else if (strcmp(tag->key, "UserComment") == 0) {
+            } else if (strcmp(key, "usercomment") == 0) {
                 APPEND_TAG_META(MetaExifUserComment)
-            } else if (strcmp(tag->key, "ISOSpeedRatings") == 0) {
+            } else if (strcmp(key, "isospeedratings") == 0) {
                 APPEND_TAG_META(MetaExifIsoSpeedRatings)
-            } else if (strcmp(tag->key, "ExposureTime") == 0) {
+            } else if (strcmp(key, "exposuretime") == 0) {
                 APPEND_TAG_META(MetaExifExposureTime)
-            } else if (strcmp(tag->key, "DateTime") == 0) {
+            } else if (strcmp(key, "datetime") == 0) {
                 APPEND_TAG_META(MetaExifDateTime)
+            } else if (strcmp(key, "gpslatitude") == 0) {
+                APPEND_TAG_META(MetaExifGpsLatitudeDMS)
+            } else if (strcmp(key, "gpslatituderef") == 0) {
+                APPEND_TAG_META(MetaExifGpsLatitudeRef)
+            } else if (strcmp(key, "gpslongitude") == 0) {
+                APPEND_TAG_META(MetaExifGpsLongitudeDMS)
+            } else if (strcmp(key, "gpslongituderef") == 0) {
+                APPEND_TAG_META(MetaExifGpsLongitudeRef)
             }
         }
     }

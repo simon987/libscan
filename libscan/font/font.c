@@ -144,27 +144,28 @@ void parse_font(scan_font_ctx_t *ctx, vfile_t *f, document_t *doc) {
     }
 
     size_t buf_len = 0;
-    void * buf = read_all(f, &buf_len);
+    void *buf = read_all(f, &buf_len);
     if (buf == NULL) {
         CTX_LOG_ERROR(f->filepath, "read_all() failed")
         return;
     }
 
     FT_Face face;
-    FT_Error err = FT_New_Memory_Face(ft_lib, (unsigned char *) buf, buf_len, 0, &face);
+    FT_Error err = FT_New_Memory_Face(ft_lib, (unsigned char *) buf, (int) buf_len, 0, &face);
     if (err != 0) {
-        CTX_LOG_ERRORF(doc->filepath, "(font.c) FT_New_Memory_Face() returned error code [%d] %s", err, FT_Error_String(err))
+        CTX_LOG_ERRORF(doc->filepath, "(font.c) FT_New_Memory_Face() returned error code [%d] %s", err,
+                       FT_Error_String(err))
         free(buf);
         return;
     }
 
-    char font_name[1024];
+    char font_name[4096];
 
-    if (face->style_name == NULL || *(face->style_name) == '?') {
+    if (face->style_name == NULL || (strcmp(face->style_name, "?") == 0)) {
         if (face->family_name == NULL) {
             strcpy(font_name, "(null)");
         } else {
-            strcpy(font_name, face->family_name);
+            strncpy(font_name, face->family_name, sizeof(font_name));
         }
     } else {
         snprintf(font_name, sizeof(font_name), "%s %s", face->family_name, face->style_name);
@@ -186,7 +187,8 @@ void parse_font(scan_font_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
     err = FT_Set_Pixel_Sizes(face, 0, pixel);
     if (err != 0) {
-        CTX_LOG_WARNINGF(doc->filepath, "(font.c) FT_Set_Pixel_Sizes() returned error code [%d] %s", err, FT_Error_String(err))
+        CTX_LOG_WARNINGF(doc->filepath, "(font.c) FT_Set_Pixel_Sizes() returned error code [%d] %s", err,
+                         FT_Error_String(err))
         FT_Done_Face(face);
         free(buf);
         return;
@@ -207,7 +209,8 @@ void parse_font(scan_font_ctx_t *ctx, vfile_t *f, document_t *doc) {
             c = c >= 'a' && c <= 'z' ? c - 32 : c + 32;
             err = FT_Load_Char(face, c, FT_LOAD_NO_HINTING | FT_LOAD_RENDER);
             if (err != 0) {
-                CTX_LOG_WARNINGF(doc->filepath, "(font.c) FT_Load_Char() returned error code [%d] %s", err, FT_Error_String(err))
+                CTX_LOG_WARNINGF(doc->filepath, "(font.c) FT_Load_Char() returned error code [%d] %s", err,
+                                 FT_Error_String(err))
                 continue;
             }
         }

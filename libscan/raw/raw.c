@@ -8,7 +8,7 @@
 #define MIN_SIZE 32
 
 int store_thumbnail_jpeg(scan_raw_ctx_t *ctx, libraw_processed_image_t *img, document_t *doc) {
-    return store_image_thumbnail((scan_media_ctx_t*)ctx, img->data, img->data_size, doc, "x.jpeg");
+    return store_image_thumbnail((scan_media_ctx_t *) ctx, img->data, img->data_size, doc, "x.jpeg");
 }
 
 int store_thumbnail_rgb24(scan_raw_ctx_t *ctx, libraw_processed_image_t *img, document_t *doc) {
@@ -36,7 +36,7 @@ int store_thumbnail_rgb24(scan_raw_ctx_t *ctx, libraw_processed_image_t *img, do
 
     AVFrame *scaled_frame = av_frame_alloc();
 
-    struct SwsContext *sws_ctx= sws_getContext(
+    struct SwsContext *sws_ctx = sws_getContext(
             img->width, img->height, AV_PIX_FMT_RGB24,
             dstW, dstH, AV_PIX_FMT_YUVJ420P,
             SIST_SWS_ALGO, 0, 0, 0
@@ -79,6 +79,8 @@ int store_thumbnail_rgb24(scan_raw_ctx_t *ctx, libraw_processed_image_t *img, do
 
     return TRUE;
 }
+
+#define DMS_REF(ref) (((ref) == 'S' || (ref) == 'W') ? -1 : 1)
 
 void parse_raw(scan_raw_ctx_t *ctx, vfile_t *f, document_t *doc) {
     libraw_data_t *libraw_lib = libraw_init(0);
@@ -134,9 +136,22 @@ void parse_raw(scan_raw_ctx_t *ctx, vfile_t *f, document_t *doc) {
     snprintf(tmp, sizeof(tmp), "%.1f", libraw_lib->other.aperture);
     APPEND_STR_META(doc, MetaExifFNumber, tmp)
 
-    int denominator = (int)roundf(1 / libraw_lib->other.shutter);
+    int denominator = (int) roundf(1 / libraw_lib->other.shutter);
     snprintf(tmp, sizeof(tmp), "1/%d", denominator);
     APPEND_STR_META(doc, MetaExifExposureTime, tmp)
+
+    libraw_gps_info_t gps = libraw_lib->other.parsed_gps;
+    snprintf(
+            tmp, sizeof(tmp), "%.15f",
+            (gps.longtitude[0] + gps.longtitude[1] / 60 + gps.longtitude[2] / 3600) * DMS_REF(gps.longref)
+    );
+    APPEND_STR_META(doc, MetaExifGpsLongitudeDec, tmp)
+
+    snprintf(
+            tmp, sizeof(tmp), "%.15f",
+            (gps.latitude[0] + gps.latitude[1] / 60 + gps.latitude[2] / 3600) * DMS_REF(gps.latref)
+    );
+    APPEND_STR_META(doc, MetaExifGpsLatitudeDec, tmp)
 
     APPEND_STR_META(doc, MetaMediaVideoCodec, "raw")
 
