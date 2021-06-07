@@ -291,6 +291,19 @@ TEST(Comic, ComicCbr) {
     cleanup(&doc, &f);
 }
 
+TEST(Comic, ComicIssue160) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/comic-segfault-issue-160.cbr", &f, &doc);
+
+    int tn_size_saved = comic_ctx.tn_size;
+    comic_ctx.tn_size = 0;
+    parse_comic(&comic_ctx, &f, &doc);
+    comic_ctx.tn_size = tn_size_saved;
+
+    cleanup(&doc, &f);
+}
+
 TEST(Comic, ComicCbrAsIs) {
     vfile_t f;
     document_t doc;

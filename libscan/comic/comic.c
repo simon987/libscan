@@ -12,6 +12,10 @@ void parse_comic(scan_comic_ctx_t *ctx, vfile_t *f, document_t *doc) {
     struct archive_entry *entry = NULL;
     arc_data_t arc_data;
 
+    if (ctx->tn_size <= 0) {
+        return;
+    }
+
     int ret = arc_open(&arc_ctx, f, &a, &arc_data, TRUE);
     if (ret != ARCHIVE_OK) {
         CTX_LOG_ERRORF(f->filepath, "(cbr.c) [%d] %s", ret, archive_error_string(a))
@@ -26,10 +30,10 @@ void parse_comic(scan_comic_ctx_t *ctx, vfile_t *f, document_t *doc) {
             const char *file_path = utf8_name == NULL ? archive_entry_pathname(entry) : utf8_name;
 
             char *p = strrchr(file_path, '.');
-            if (p != NULL && strcmp(p, ".png") == 0 || strcmp(p, ".jpg") == 0 || strcmp(p, ".jpeg") == 0) {
+            if (p != NULL && (strcmp(p, ".png") == 0 || strcmp(p, ".jpg") == 0 || strcmp(p, ".jpeg") == 0)) {
                 size_t entry_size = archive_entry_size(entry);
                 void *buf = malloc(entry_size);
-                int read = archive_read_data(a, buf, entry_size);
+                size_t read = archive_read_data(a, buf, entry_size);
 
                 if (read != entry_size) {
                     const char *err_str = archive_error_string(a);
