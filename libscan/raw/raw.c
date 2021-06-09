@@ -101,6 +101,7 @@ void parse_raw(scan_raw_ctx_t *ctx, vfile_t *f, document_t *doc) {
     if (ret != 0) {
         CTX_LOG_ERROR(f->filepath, "Could not open raw file")
         free(buf);
+        libraw_close(libraw_lib);
         return;
     }
 
