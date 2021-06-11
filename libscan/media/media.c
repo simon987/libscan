@@ -119,6 +119,10 @@ static void read_subtitles(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, i
             for (int i = 0; i < subtitle.num_rects; i++) {
                 const char *text = subtitle.rects[i]->ass;
 
+                if (text == NULL) {
+                    continue;
+                }
+
                 char *idx = strstr(text, "\\N");
                 if (idx != NULL && strlen(idx + 2) > 1) {
                     text_buffer_append_string0(&tex, idx + 2);
@@ -339,7 +343,6 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
                     APPEND_STR_META(doc, MetaMediaAudioCodec, desc->name)
                 }
 
-                append_audio_meta(pFormatCtx, doc);
                 audio_stream = i;
             }
         } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
@@ -375,6 +378,10 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
         if (video_stream != -1) {
             av_seek_frame(pFormatCtx, video_stream, 0, 0);
         }
+    }
+
+    if (audio_stream != -1) {
+        append_audio_meta(pFormatCtx, doc);
     }
 
     if (video_stream != -1 && ctx->tn_size > 0) {
