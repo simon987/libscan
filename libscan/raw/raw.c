@@ -142,17 +142,18 @@ void parse_raw(scan_raw_ctx_t *ctx, vfile_t *f, document_t *doc) {
     APPEND_STR_META(doc, MetaExifExposureTime, tmp)
 
     libraw_gps_info_t gps = libraw_lib->other.parsed_gps;
-    snprintf(
-            tmp, sizeof(tmp), "%.15f",
-            (gps.longtitude[0] + gps.longtitude[1] / 60 + gps.longtitude[2] / 3600) * DMS_REF(gps.longref)
-    );
-    APPEND_STR_META(doc, MetaExifGpsLongitudeDec, tmp)
+    double gps_longitude_dec =
+            (gps.longtitude[0] + gps.longtitude[1] / 60 + gps.longtitude[2] / 3600) * DMS_REF(gps.longref);
+    snprintf(tmp, sizeof(tmp), "%.15f", gps_longitude_dec);
+    if (gps_longitude_dec != 0.0) {
+        APPEND_STR_META(doc, MetaExifGpsLongitudeDec, tmp)
+    }
 
-    snprintf(
-            tmp, sizeof(tmp), "%.15f",
-            (gps.latitude[0] + gps.latitude[1] / 60 + gps.latitude[2] / 3600) * DMS_REF(gps.latref)
-    );
-    APPEND_STR_META(doc, MetaExifGpsLatitudeDec, tmp)
+    double gps_latitude_dec = (gps.latitude[0] + gps.latitude[1] / 60 + gps.latitude[2] / 3600) * DMS_REF(gps.latref);
+    snprintf(tmp, sizeof(tmp), "%.15f", gps_latitude_dec);
+    if (gps_latitude_dec != 0.0) {
+        APPEND_STR_META(doc, MetaExifGpsLatitudeDec, tmp)
+    }
 
     APPEND_STR_META(doc, MetaMediaVideoCodec, "raw")
 
