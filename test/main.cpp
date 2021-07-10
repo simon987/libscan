@@ -21,6 +21,7 @@ static scan_text_ctx_t text_500_ctx;
 
 static scan_ebook_ctx_t ebook_ctx;
 static scan_ebook_ctx_t ebook_500_ctx;
+static scan_ebook_ctx_t ebook_fast_ctx;
 
 static scan_comic_ctx_t comic_ctx;
 
@@ -246,6 +247,28 @@ TEST(Ebook, Epub1) {
     parse_ebook(&ebook_500_ctx, &f, "application/epub+zip", &doc);
 
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Rabies");
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
+    cleanup(&doc, &f);
+}
+
+TEST(Ebook, EpubFastMupdfError) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/mupdf-issue-129.epub", &f, &doc);
+
+    parse_ebook(&ebook_fast_ctx, &f, "application/epub+zip", &doc);
+
+    ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
+    cleanup(&doc, &f);
+}
+
+TEST(Ebook, Epub1Fast) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/epub1.epub", &f, &doc);
+
+    parse_ebook(&ebook_fast_ctx, &f, "application/epub+zip", &doc);
+
     ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
     cleanup(&doc, &f);
 }
@@ -954,9 +977,13 @@ int main(int argc, char **argv) {
     ebook_ctx.tn_size = 500;
     ebook_ctx.log = noop_log;
     ebook_ctx.logf = noop_logf;
+    ebook_ctx.fast_epub_parse = 0;
 
     ebook_500_ctx = ebook_ctx;
     ebook_500_ctx.content_size = 500;
+
+    ebook_fast_ctx = ebook_500_ctx;
+    ebook_fast_ctx.fast_epub_parse = 1;
 
     comic_ctx.tn_qscale = 1.0;
     comic_ctx.tn_size = 500;

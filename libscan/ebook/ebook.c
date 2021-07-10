@@ -4,6 +4,7 @@
 #include <tesseract/capi.h>
 
 #include "../media/media.h"
+#include "../arc/arc.h"
 
 #define MIN_OCR_SIZE 350
 #define MIN_OCR_LEN 10
@@ -38,16 +39,15 @@ int pixmap_is_blank(const fz_pixmap *pixmap) {
     return TRUE;
 }
 
-fz_pixmap *load_pixmap(scan_ebook_ctx_t *ctx, int page, fz_context *fzctx, fz_document *fzdoc, document_t *doc, fz_page **cover) {
+fz_pixmap *
+load_pixmap(scan_ebook_ctx_t *ctx, int page, fz_context *fzctx, fz_document *fzdoc, document_t *doc, fz_page **cover) {
 
     int err = 0;
 
     fz_var(cover);
     fz_var(err);
-    fz_try(fzctx)
-        *cover = fz_load_page(fzctx, fzdoc, page);
-    fz_catch(fzctx)
-        err = 1;
+    fz_try(fzctx)*cover = fz_load_page(fzctx, fzdoc, page);
+    fz_catch(fzctx)err = 1;
 
     if (err != 0) {
         CTX_LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, fzctx->error.message)
@@ -75,14 +75,11 @@ fz_pixmap *load_pixmap(scan_ebook_ctx_t *ctx, int page, fz_context *fzctx, fz_do
 
     fz_var(err);
     fz_try(fzctx) {
-        fz_run_page(fzctx, *cover, dev, fz_identity, NULL);
-    }
-    fz_always(fzctx) {
-        fz_close_device(fzctx, dev);
-        fz_drop_device(fzctx, dev);
-    }
-    fz_catch(fzctx)
-        err = fzctx->error.errcode;
+                fz_run_page(fzctx, *cover, dev, fz_identity, NULL);
+            } fz_always(fzctx) {
+            fz_close_device(fzctx, dev);
+            fz_drop_device(fzctx, dev);
+        } fz_catch(fzctx)err = fzctx->error.errcode;
 
     if (err != 0) {
         CTX_LOG_WARNINGF(doc->filepath, "fz_run_page() returned error code [%d] %s", err, fzctx->error.message)
@@ -131,7 +128,8 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     int dst_buf_len = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, pixmap->w, pixmap->h, 1);
     uint8_t *dst_buf = (uint8_t *) av_malloc(dst_buf_len);
 
-    av_image_fill_arrays(scaled_frame->data, scaled_frame->linesize, dst_buf, AV_PIX_FMT_YUV420P, pixmap->w, pixmap->h, 1);
+    av_image_fill_arrays(scaled_frame->data, scaled_frame->linesize, dst_buf, AV_PIX_FMT_YUV420P, pixmap->w, pixmap->h,
+                         1);
 
     const uint8_t *in_data[1] = {pixmap->samples};
     int in_line_size[1] = {(int) pixmap->stride};
@@ -255,7 +253,8 @@ void fill_image(fz_context *fzctx, UNUSED(fz_device *dev),
     }
 }
 
-void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const char *mime_str, document_t *doc, int tn_only) {
+void
+parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const char *mime_str, document_t *doc, int tn_only) {
 
     fz_context *fzctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
     thread_ctx = *ctx;
@@ -270,13 +269,10 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
     fz_var(stream);
     fz_var(err);
 
-    fz_try(fzctx)
-    {
-        stream = fz_open_memory(fzctx, buf, buf_len);
-        fzdoc = fz_open_document_with_stream(fzctx, mime_str, stream);
-    }
-    fz_catch(fzctx)
-        err = fzctx->error.errcode;
+    fz_try(fzctx) {
+                stream = fz_open_memory(fzctx, buf, buf_len);
+                fzdoc = fz_open_document_with_stream(fzctx, mime_str, stream);
+            } fz_catch(fzctx)err = fzctx->error.errcode;
 
     if (err != 0) {
         fz_drop_stream(fzctx, stream);
@@ -287,10 +283,8 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
 
     int page_count = -1;
     fz_var(err);
-    fz_try(fzctx)
-        page_count = fz_count_pages(fzctx, fzdoc);
-    fz_catch(fzctx)
-        err = fzctx->error.errcode;
+    fz_try(fzctx)page_count = fz_count_pages(fzctx, fzdoc);
+    fz_catch(fzctx)err = fzctx->error.errcode;
 
     if (err) {
         CTX_LOG_WARNINGF(doc->filepath, "fz_count_pages() returned error code [%d] %s", err, fzctx->error.message)
@@ -319,20 +313,16 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
     }
 
     char title[8192] = {'\0',};
-    fz_try(fzctx)
-                fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_TITLE, title, sizeof(title));
-    fz_catch(fzctx)
-        ;
+    fz_try(fzctx)fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_TITLE, title, sizeof(title));
+    fz_catch(fzctx);
 
     if (strlen(title) > 0) {
         APPEND_UTF8_META(doc, MetaTitle, title)
     }
 
     char author[4096] = {'\0',};
-    fz_try(fzctx)
-                fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_AUTHOR, author, sizeof(author));
-    fz_catch(fzctx)
-        ;
+    fz_try(fzctx)fz_lookup_metadata(fzctx, fzdoc, FZ_META_INFO_AUTHOR, author, sizeof(author));
+    fz_catch(fzctx);
 
     if (strlen(author) > 0) {
         APPEND_UTF8_META(doc, MetaAuthor, author)
@@ -346,10 +336,8 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
         for (int current_page = 0; current_page < page_count; current_page++) {
             fz_page *page = NULL;
             fz_var(err);
-            fz_try(fzctx)
-                page = fz_load_page(fzctx, fzdoc, current_page);
-            fz_catch(fzctx)
-                err = fzctx->error.errcode;
+            fz_try(fzctx)page = fz_load_page(fzctx, fzdoc, current_page);
+            fz_catch(fzctx)err = fzctx->error.errcode;
             if (err != 0) {
                 CTX_LOG_WARNINGF(doc->filepath, "fz_load_page() returned error code [%d] %s", err, fzctx->error.message)
                 text_buffer_destroy(&thread_buffer);
@@ -373,15 +361,11 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
             }
 
             fz_var(err);
-            fz_try(fzctx)
-                fz_run_page(fzctx, page, dev, fz_identity, NULL);
-            fz_always(fzctx)
-            {
-                fz_close_device(fzctx, dev);
-                fz_drop_device(fzctx, dev);
-            }
-            fz_catch(fzctx)
-                err = fzctx->error.errcode;
+            fz_try(fzctx)fz_run_page(fzctx, page, dev, fz_identity, NULL);
+            fz_always(fzctx) {
+                    fz_close_device(fzctx, dev);
+                    fz_drop_device(fzctx, dev);
+                } fz_catch(fzctx)err = fzctx->error.errcode;
 
             if (err != 0) {
                 CTX_LOG_WARNINGF(doc->filepath, "fz_run_page() returned error code [%d] %s", err, fzctx->error.message)
@@ -424,7 +408,77 @@ void parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const cha
     fz_drop_context(fzctx);
 }
 
+static scan_arc_ctx_t arc_ctx = (scan_arc_ctx_t) {.passphrase = {0,}};
+
+void parse_epub_fast(scan_ebook_ctx_t *ctx, vfile_t *f, document_t *doc) {
+    struct archive *a = NULL;
+    struct archive_entry *entry = NULL;
+    arc_data_t arc_data;
+
+    text_buffer_t content_buffer = text_buffer_create(ctx->content_size);
+
+    if (ctx->tn_size <= 0) {
+        return;
+    }
+
+    int ret = arc_open(&arc_ctx, f, &a, &arc_data, TRUE);
+    if (ret != ARCHIVE_OK) {
+        CTX_LOG_ERRORF(f->filepath, "(ebook.c) [%d] %s", ret, archive_error_string(a))
+        archive_read_free(a);
+        return;
+    }
+
+    while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
+        struct stat info = *archive_entry_stat(entry);
+        if (S_ISREG(info.st_mode)) {
+            const char *utf8_name = archive_entry_pathname_utf8(entry);
+            const char *file_path = utf8_name == NULL ? archive_entry_pathname(entry) : utf8_name;
+
+            char *p = strrchr(file_path, '.');
+            if (p != NULL && (strcmp(p, ".html") == 0 || (strcmp(p, ".xhtml") == 0))) {
+                size_t entry_size = archive_entry_size(entry);
+                void *buf = malloc(entry_size + 1);
+                size_t read = archive_read_data(a, buf, entry_size);
+                *(char *) (buf + entry_size) = '\0';
+
+                if (read != entry_size) {
+                    const char *err_str = archive_error_string(a);
+                    if (err_str) {
+                        CTX_LOG_ERRORF("ebook.c", "Error while reading entry: %s", err_str)
+                    }
+                    free(buf);
+                    break;
+                }
+
+                ret = text_buffer_append_markup(&content_buffer, buf);
+                free(buf);
+
+                if (ret == TEXT_BUF_FULL) {
+                    break;
+                }
+            }
+        }
+    }
+
+    text_buffer_terminate_string(&content_buffer);
+
+    meta_line_t *meta_content = malloc(sizeof(meta_line_t) + content_buffer.dyn_buffer.cur);
+    meta_content->key = MetaContent;
+    memcpy(meta_content->str_val, content_buffer.dyn_buffer.buf, content_buffer.dyn_buffer.cur);
+    APPEND_META(doc, meta_content)
+
+    text_buffer_destroy(&content_buffer);
+
+    archive_read_free(a);
+}
+
 void parse_ebook(scan_ebook_ctx_t *ctx, vfile_t *f, const char *mime_str, document_t *doc) {
+
+    if (ctx->fast_epub_parse && is_epub(mime_str)) {
+        parse_epub_fast(ctx, f, doc);
+        return;
+    }
+
     size_t buf_len;
     void *buf = read_all(f, &buf_len);
     if (buf == NULL) {
