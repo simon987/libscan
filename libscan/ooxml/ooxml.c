@@ -47,7 +47,7 @@ int extract_text(scan_ooxml_ctx_t *ctx, xmlDoc *xml, xmlNode *node, text_buffer_
     }
 
     for (xmlNode *child = node; child; child = child->next) {
-        if (*child->name == 't' && *(child->name + 1) == '\0') {
+        if (child->name != NULL && *child->name == 't' && *(child->name + 1) == '\0') {
             xmlChar *text = xmlNodeListGetString(xml, child->xmlChildrenNode, 1);
 
             if (text) {
