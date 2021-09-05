@@ -3,8 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 project(scan)
 set(CMAKE_C_STANDARD 11)
 
-option(BUILD_TESTS "Build tests" off)
-option(SIST_FAKE_STORE "Disable IO operations of LMDB stores for debugging purposes" 0)
+option(BUILD_TESTS "Build tests" on)
 
 add_subdirectory(third-party/antiword)
 add_compile_definitions(
