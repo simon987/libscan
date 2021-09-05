@@ -255,7 +255,7 @@ static int text_buffer_append_string(text_buffer_t *buf, const char *str, size_t
     }
 
     utf8_int32_t c;
-    char tmp[16];
+    char tmp[16] = {0};
 
     do {
         ptr = (char *) utf8codepoint(ptr, &c);

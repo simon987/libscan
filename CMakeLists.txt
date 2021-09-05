@@ -97,7 +97,7 @@ endif()
 ExternalProject_Add(
         ffmpeg
         GIT_REPOSITORY https://git.ffmpeg.org/ffmpeg.git
-        GIT_TAG "n4.3.2"
+        GIT_TAG "n4.4"
 
         UPDATE_COMMAND ""
         PATCH_COMMAND ""
@@ -118,11 +118,31 @@ ExternalProject_Add(
 SET(FFMPEG_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_ffmpeg/src/ffmpeg)
 SET(FFMPEG_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_ffmpeg/src/ffmpeg)
 
+#ExternalProject_Add(
+#        libwpd
+#        URL http://prdownloads.sourceforge.net/libwpd/libwpd-0.9.9.tar.gz
+#
+#        UPDATE_COMMAND ""
+#        PATCH_COMMAND ""
+#        TEST_COMMAND ""
+#        CONFIGURE_COMMAND ./configure --without-docs --enable-static --disable-shared
+#        INSTALL_COMMAND ""
+#
+#        PREFIX "third-party/ext_libwpd"
+#        SOURCE_DIR "third-party/ext_libwpd/src/libwpd"
+#        BINARY_DIR "third-party/ext_libwpd/src/libwpd"
+#
+#        BUILD_COMMAND ${MAKE_EXE} -j33
+#)
+#SET(WPD_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libwpd/src/libwpd/src/lib/.libs/)
+#SET(WPD_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party/ext_libwpd/src/libwpd/inc/)
+
 add_dependencies(
         scan
         libmobi
         ffmpeg
         antiword
+#        libwpd
 )
 
 target_link_libraries(
@@ -141,10 +161,11 @@ target_link_libraries(
 
         ${MOBI_LIB_DIR}/libmobi.a
 
+#        ${WPD_LIB_DIR}/libwpd-0.9.a
+
         ${FREETYPE_LIB}
         ${HARFBUZZ_LIB}
         ${JBIG2DEC_LIB}
-        #        OpenSSL::SSL OpenSSL::Crypto
 
         stdc++
 
@@ -185,6 +206,7 @@ target_include_directories(
         ${LIBXML2_INCLUDE_DIR}
         ${FFMPEG_INCLUDE_DIR}
         ${MOBI_INCLUDE_DIR}
+#        ${WPD_INCLUDE_DIR}
 )
 
 if (BUILD_TESTS)

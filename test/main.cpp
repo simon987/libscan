@@ -203,7 +203,7 @@ TEST(Ebook, CandlePdf) {
     ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
     ASSERT_NE(get_meta(&doc, MetaContent)->str_val[0], ' ');
     ASSERT_NE(size_before, store_size);
-    ASSERT_EQ(get_meta(&doc, MetaPages)->int_val, 16);
+    ASSERT_EQ(get_meta(&doc, MetaPages)->long_val, 16);
 
     cleanup(&doc, &f);
 }
@@ -711,8 +711,8 @@ TEST(RAW, Panasonic) {
     ASSERT_STREQ(get_meta(&doc, MetaExifDateTime)->str_val, "2020:07:20 10:00:34");
     ASSERT_STREQ(get_meta(&doc, MetaExifFocalLength)->str_val, "20.0");
     ASSERT_STREQ(get_meta(&doc, MetaExifFNumber)->str_val, "2.0");
-    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 5200);
-    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 3904);
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->long_val, 5200);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->long_val, 3904);
     ASSERT_NE(size_before, store_size);
 
     cleanup(&doc, &f);
@@ -747,8 +747,8 @@ TEST(RAW, Nikon) {
     ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "raw");
     ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "D750");
     ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "Nikon");
-    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 6032);
-    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 4032);
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->long_val, 6032);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->long_val, 4032);
     ASSERT_NE(size_before, store_size);
 
     cleanup(&doc, &f);
@@ -766,8 +766,8 @@ TEST(RAW, Sony) {
     ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "raw");
     ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "ILCE-7RM3");
     ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "Sony");
-    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 7968);
-    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 5320);
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->long_val, 7968);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->long_val, 5320);
     ASSERT_NE(size_before, store_size);
 
     cleanup(&doc, &f);
@@ -785,8 +785,8 @@ TEST(RAW, Olympus) {
     ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "raw");
     ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "E-M5MarkII");
     ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "Olympus");
-    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 4640);
-    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 3472);
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->long_val, 4640);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->long_val, 3472);
     ASSERT_NE(size_before, store_size);
 
     cleanup(&doc, &f);
@@ -803,8 +803,8 @@ TEST(RAW, Fuji) {
     ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "raw");
     ASSERT_STREQ(get_meta(&doc, MetaExifModel)->str_val, "X-T2");
     ASSERT_STREQ(get_meta(&doc, MetaExifMake)->str_val, "Fujifilm");
-    ASSERT_EQ(get_meta(&doc, MetaWidth)->int_val, 6032);
-    ASSERT_EQ(get_meta(&doc, MetaHeight)->int_val, 4028);
+    ASSERT_EQ(get_meta(&doc, MetaWidth)->long_val, 6032);
+    ASSERT_EQ(get_meta(&doc, MetaHeight)->long_val, 4028);
     ASSERT_NE(size_before, store_size);
 
     cleanup(&doc, &f);
@@ -823,7 +823,7 @@ TEST(Msdoc, Test1Pdf) {
     ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "October 2000") != nullptr);
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "INTERNATIONAL ORGANIZATION FOR STANDARDIZATION");
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Oliver Morgan");
-    ASSERT_EQ(get_meta(&doc, MetaPages)->int_val, 57);
+    ASSERT_EQ(get_meta(&doc, MetaPages)->long_val, 57);
     ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), msdoc_ctx.content_size, 4);
     ASSERT_NE(size_before, store_size);
 
@@ -978,6 +978,7 @@ int main(int argc, char **argv) {
     ebook_ctx.log = noop_log;
     ebook_ctx.logf = noop_logf;
     ebook_ctx.fast_epub_parse = 0;
+    ebook_ctx.tn_qscale = 1.0;
 
     ebook_500_ctx = ebook_ctx;
     ebook_500_ctx.content_size = 500;

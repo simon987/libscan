@@ -261,6 +261,9 @@ append_video_meta(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, AVFrame *f
         meta_line_t *meta_duration = malloc(sizeof(meta_line_t));
         meta_duration->key = MetaMediaDuration;
         meta_duration->long_val = pFormatCtx->duration / AV_TIME_BASE;
+        if (meta_duration->long_val > INT32_MAX) {
+            meta_duration->long_val = 0;
+        }
         APPEND_META(doc, meta_duration)
 
         meta_line_t *meta_bitrate = malloc(sizeof(meta_line_t));
@@ -356,12 +359,12 @@ void parse_media_format_ctx(scan_media_ctx_t *ctx, AVFormatContext *pFormatCtx, 
 
                 meta_line_t *meta_w = malloc(sizeof(meta_line_t));
                 meta_w->key = MetaWidth;
-                meta_w->int_val = stream->codecpar->width;
+                meta_w->long_val = stream->codecpar->width;
                 APPEND_META(doc, meta_w)
 
                 meta_line_t *meta_h = malloc(sizeof(meta_line_t));
                 meta_h->key = MetaHeight;
-                meta_h->int_val = stream->codecpar->height;
+                meta_h->long_val = stream->codecpar->height;
                 APPEND_META(doc, meta_h)
 
                 video_stream = i;

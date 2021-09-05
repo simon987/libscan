@@ -114,8 +114,8 @@ void parse_raw(scan_raw_ctx_t *ctx, vfile_t *f, document_t *doc) {
     if (*libraw_lib->idata.software != '\0') {
         APPEND_STR_META(doc, MetaExifSoftware, libraw_lib->idata.software)
     }
-    APPEND_INT_META(doc, MetaWidth, libraw_lib->sizes.width)
-    APPEND_INT_META(doc, MetaHeight, libraw_lib->sizes.height)
+    APPEND_LONG_META(doc, MetaWidth, libraw_lib->sizes.width)
+    APPEND_LONG_META(doc, MetaHeight, libraw_lib->sizes.height)
     char tmp[1024];
     snprintf(tmp, sizeof(tmp), "%g", libraw_lib->other.iso_speed);
     APPEND_STR_META(doc, MetaExifIsoSpeedRatings, tmp)

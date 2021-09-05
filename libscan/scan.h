@@ -13,19 +13,7 @@
 
 #define SIST_SWS_ALGO SWS_LANCZOS
 
-#define META_INT_MASK 0x8000
-#define META_STR_MASK 0x4000
-#define META_LONG_MASK 0x2000
-
 #define UNUSED(x) __attribute__((__unused__))  x
-
-#define META_STR(id) ((unsigned) id) | ((unsigned) META_STR_MASK)
-#define META_INT(id) ((unsigned) id) | ((unsigned) META_INT_MASK)
-#define META_LONG(id) ((unsigned) id) | ((unsigned) META_LONG_MASK)
-
-#define IS_META_INT(key) (key & META_INT_MASK) == META_INT_MASK
-#define IS_META_LONG(key) (key & META_LONG_MASK) == META_LONG_MASK
-#define IS_META_STR(key) (key & META_STR_MASK) == META_STR_MASK
 
 typedef void (*store_callback_t)(char *key, size_t key_len, char *buf, size_t buf_len);
 typedef void (*logf_callback_t)(const char *filepath, int level, char *format, ...);
@@ -33,7 +21,7 @@ typedef void (*log_callback_t)(const char *filepath, int level, char *str);
 
 typedef int scan_code_t;
 #define SCAN_OK (scan_code_t) 0
-#define SCAN_ERR_READ (scan_code_t) -1
+#define SCAN_ERR_READ (scan_code_t) (-1)
 
 #define LEVEL_DEBUG 0
 #define LEVEL_INFO 1
@@ -56,41 +44,45 @@ typedef int scan_code_t;
 #define CTX_LOG_FATALF(filepath, fmt, ...) ctx->logf(filepath, LEVEL_FATAL, fmt, __VA_ARGS__); exit(-1);
 #define CTX_LOG_FATAL(filepath, str) ctx->log(filepath, LEVEL_FATAL, str); exit(-1);
 
-// This is written to file as a 16-bit int!
 enum metakey {
-    MetaContent = META_STR(1),
-    MetaWidth = META_INT(2),
-    MetaHeight = META_INT(3),
-    MetaMediaDuration = META_LONG(4),
-    MetaMediaAudioCodec = META_STR(5),
-    MetaMediaVideoCodec = META_STR(6),
-    MetaMediaBitrate = META_LONG(7),
-    MetaArtist = META_STR(8),
-    MetaAlbum = META_STR(9),
-    MetaAlbumArtist = META_STR(10),
-    MetaGenre = META_STR(11),
-    MetaTitle = META_STR(12),
-    MetaFontName = META_STR(13),
-    MetaParent = META_STR(14),
-    MetaExifMake = META_STR(15),
-    MetaExifSoftware = META_STR(16),
-    MetaExifExposureTime = META_STR(17),
-    MetaExifFNumber = META_STR(18),
-    MetaExifFocalLength = META_STR(19),
-    MetaExifUserComment = META_STR(20),
-    MetaExifModel = META_STR(21),
-    MetaExifIsoSpeedRatings = META_STR(22),
-    MetaExifDateTime = META_STR(23),
-    MetaAuthor = META_STR(24),
-    MetaModifiedBy = META_STR(25),
-    MetaThumbnail = META_STR(26),
-    MetaPages = META_INT(27),
-    MetaExifGpsLongitudeDMS = META_STR(28),
-    MetaExifGpsLongitudeRef = META_STR(29),
-    MetaExifGpsLatitudeDMS = META_STR(30),
-    MetaExifGpsLatitudeRef = META_STR(31),
-    MetaExifGpsLatitudeDec = META_STR(32),
-    MetaExifGpsLongitudeDec = META_STR(33),
+    // String
+    MetaContent = 1,
+    MetaMediaAudioCodec,
+    MetaMediaVideoCodec,
+    MetaArtist,
+    MetaAlbum,
+    MetaAlbumArtist,
+    MetaGenre,
+    MetaTitle,
+    MetaFontName,
+    MetaParent,
+    MetaExifMake,
+    MetaExifSoftware,
+    MetaExifExposureTime,
+    MetaExifFNumber,
+    MetaExifFocalLength,
+    MetaExifUserComment,
+    MetaExifModel,
+    MetaExifIsoSpeedRatings,
+    MetaExifDateTime,
+    MetaAuthor,
+    MetaModifiedBy,
+    MetaThumbnail,
+
+    // Number
+    MetaWidth,
+    MetaHeight,
+    MetaMediaDuration,
+    MetaMediaBitrate,
+    MetaPages,
+
+    // ??
+    MetaExifGpsLongitudeDMS,
+    MetaExifGpsLongitudeRef,
+    MetaExifGpsLatitudeDMS,
+    MetaExifGpsLatitudeRef,
+    MetaExifGpsLatitudeDec,
+    MetaExifGpsLongitudeDec,
 };
 
 typedef struct meta_line {
@@ -98,8 +90,8 @@ typedef struct meta_line {
     enum metakey key;
     union {
         char str_val[0];
-        int int_val;
         unsigned long long_val;
+        double double_val;
     };
 } meta_line_t;
 

@@ -131,7 +131,10 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     av_image_fill_arrays(scaled_frame->data, scaled_frame->linesize, dst_buf, AV_PIX_FMT_YUV420P, pixmap->w, pixmap->h,
                          1);
 
-    const uint8_t *in_data[1] = {pixmap->samples};
+    unsigned char *samples = calloc(1, 1024 * 1024 * 1024);
+    memcpy(samples, pixmap->samples, pixmap->stride * pixmap->h);
+
+    const uint8_t *in_data[1] = {samples,};
     int in_line_size[1] = {(int) pixmap->stride};
 
     sws_scale(sws_ctx,
@@ -147,7 +150,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     sws_freeContext(sws_ctx);
 
     // YUV420p -> JPEG
-    AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(pixmap->w, pixmap->h, 1.0f);
+    AVCodecContext *jpeg_encoder = alloc_jpeg_encoder(pixmap->w, pixmap->h, ctx->tn_qscale);
     avcodec_send_frame(jpeg_encoder, scaled_frame);
 
     AVPacket jpeg_packet;
@@ -157,6 +160,7 @@ int render_cover(scan_ebook_ctx_t *ctx, fz_context *fzctx, document_t *doc, fz_d
     APPEND_TN_META(doc, pixmap->w, pixmap->h)
     ctx->store((char *) doc->path_md5, sizeof(doc->path_md5), (char *) jpeg_packet.data, jpeg_packet.size);
 
+    free(samples);
     av_packet_unref(&jpeg_packet);
     av_free(*scaled_frame->data);
     av_frame_free(&scaled_frame);
@@ -185,10 +189,10 @@ void fz_warn_callback(void *user, const char *message) {
 static void init_fzctx(fz_context *fzctx, document_t *doc) {
     fz_register_document_handlers(fzctx);
 
-    static int mu_is_initialized = 0;
+    static int mu_is_initialized = FALSE;
     if (!mu_is_initialized) {
         pthread_mutex_init(&Mutex, NULL);
-        mu_is_initialized = 1;
+        mu_is_initialized = TRUE;
     }
 
     fzctx->warn.print_user = doc;
@@ -294,7 +298,7 @@ parse_ebook_mem(scan_ebook_ctx_t *ctx, void *buf, size_t buf_len, const char *mi
         return;
     }
 
-    APPEND_INT_META(doc, MetaPages, page_count)
+    APPEND_LONG_META(doc, MetaPages, page_count)
 
     if (ctx->tn_size > 0) {
         if (render_cover(ctx, fzctx, doc, fzdoc) == FALSE) {

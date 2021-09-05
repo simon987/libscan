@@ -26,11 +26,11 @@
     strcpy(meta_str->str_val, value); \
     APPEND_META(doc, meta_str)}
 
-#define APPEND_INT_META(doc, keyname, value) \
-    {meta_line_t *meta_int = malloc(sizeof(meta_line_t)); \
-    meta_int->key = keyname; \
-    meta_int->int_val = value; \
-    APPEND_META(doc, meta_int)}
+#define APPEND_LONG_META(doc, keyname, value) \
+    {meta_line_t *meta_long = malloc(sizeof(meta_line_t)); \
+    meta_long->key = keyname; \
+    meta_long->long_val = value; \
+    APPEND_META(doc, meta_long)}
 
 #define APPEND_TN_META(doc, width, height) \
     {meta_line_t *meta_str = malloc(sizeof(meta_line_t) + 4 + 1 + 4); \
