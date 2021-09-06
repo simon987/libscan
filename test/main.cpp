@@ -587,6 +587,7 @@ TEST(Ooxml, Docx1) {
 
     ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "Thomas");
     ASSERT_STREQ(get_meta(&doc, MetaModifiedBy)->str_val, "Thomas");
+    ASSERT_EQ(get_meta(&doc, MetaPages)->long_val, 2);
     ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
 
     cleanup(&doc, &f);
@@ -602,6 +603,7 @@ TEST(Ooxml, Docx2Thumbnail) {
     parse_ooxml(&ooxml_500_ctx, &f, &doc);
 
     ASSERT_NEAR(strlen(get_meta(&doc, MetaContent)->str_val), 500, 4);
+    ASSERT_EQ(get_meta(&doc, MetaPages)->long_val, 2);
     ASSERT_NE(size_before, store_size);
 
     cleanup(&doc, &f);

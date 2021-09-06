@@ -70,7 +70,7 @@ int extract_text(scan_ooxml_ctx_t *ctx, xmlDoc *xml, xmlNode *node, text_buffer_
 
 int xml_io_read(void *context, char *buffer, int len) {
     struct archive *a = context;
-    return archive_read_data(a, buffer, len);
+    return (int) archive_read_data(a, buffer, len);
 }
 
 int xml_io_close(UNUSED(void *context)) {
@@ -78,7 +78,7 @@ int xml_io_close(UNUSED(void *context)) {
     return 0;
 }
 
-#define READ_PART_ERR -2
+#define READ_PART_ERR (-2)
 
 __always_inline
 static int read_part(scan_ooxml_ctx_t *ctx, struct archive *a, text_buffer_t *buf, document_t *doc) {
@@ -102,6 +102,42 @@ static int read_part(scan_ooxml_ctx_t *ctx, struct archive *a, text_buffer_t *bu
     xmlFreeDoc(xml);
 
     return ret;
+}
+
+__always_inline
+static int read_doc_props_app(scan_ooxml_ctx_t *ctx, struct archive *a, document_t *doc) {
+    xmlDoc *xml = xmlReadIO(xml_io_read, xml_io_close, a, "/", NULL,
+                            XML_PARSE_RECOVER | XML_PARSE_NOWARNING | XML_PARSE_NOERROR | XML_PARSE_NONET);
+
+    if (xml == NULL) {
+        CTX_LOG_ERROR(doc->filepath, "Could not parse XML")
+        return -1;
+    }
+
+    xmlNode *root = xmlDocGetRootElement(xml);
+    if (root == NULL) {
+        CTX_LOG_ERROR(doc->filepath, "Empty document")
+        xmlFreeDoc(xml);
+        return -1;
+    }
+
+    if (xmlStrEqual(root->name, _X("Properties"))) {
+        for (xmlNode *child = root->children; child; child = child->next) {
+            xmlChar *text = xmlNodeListGetString(xml, child->xmlChildrenNode, 1);
+            if (text == NULL) {
+                continue;
+            }
+
+            if (xmlStrEqual(child->name, _X("Pages"))) {
+                APPEND_LONG_META(doc, MetaPages, strtol((char *) text, NULL, 10))
+            }
+
+            xmlFree(text);
+        }
+    }
+    xmlFreeDoc(xml);
+
+    return 0;
 }
 
 __always_inline
@@ -144,7 +180,7 @@ static int read_doc_props(scan_ooxml_ctx_t *ctx, struct archive *a, document_t *
     return 0;
 }
 
-#define MAX_TN_SIZE 1024 * 1024 * 15
+#define MAX_TN_SIZE (1024 * 1024 * 15)
 
 void read_thumbnail(scan_ooxml_ctx_t *ctx, document_t *doc, struct archive *a, struct archive_entry *entry) {
     size_t entry_size = archive_entry_size(entry);
@@ -153,7 +189,7 @@ void read_thumbnail(scan_ooxml_ctx_t *ctx, document_t *doc, struct archive *a, s
         return;
     }
 
-    char* buf = malloc(entry_size);
+    char *buf = malloc(entry_size);
     archive_read_data(a, buf, entry_size);
 
     APPEND_TN_META(doc, 1, 1) // Size unknown
@@ -195,6 +231,10 @@ void parse_ooxml(scan_ooxml_ctx_t *ctx, vfile_t *f, document_t *doc) {
                     break;
                 } else if (ret == TEXT_BUF_FULL) {
                     buffer_full = TRUE;
+                }
+            } else if (strcmp(path, "docProps/app.xml") == 0) {
+                if (read_doc_props_app(ctx, a, doc) != 0) {
+                    break;
                 }
             } else if (strcmp(path, "docProps/core.xml") == 0) {
                 if (read_doc_props(ctx, a, doc) != 0) {
