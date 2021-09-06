@@ -11,6 +11,7 @@ extern "C" {
 #include "../libscan/mobi/scan_mobi.h"
 #include "../libscan/raw/raw.h"
 #include "../libscan/msdoc/msdoc.h"
+#include "../libscan/wpd/wpd.h"
 #include <libavutil/avutil.h>
 }
 
@@ -38,6 +39,8 @@ static scan_raw_ctx_t raw_ctx;
 static scan_msdoc_ctx_t msdoc_ctx;
 
 static scan_msdoc_ctx_t msdoc_text_ctx;
+
+static scan_wpd_ctx_t wpd_ctx;
 
 
 document_t LastSubDoc;
@@ -942,7 +945,7 @@ TEST(Msdoc, TestFuzz1) {
 
     for (int i = 0; i < 1000; i++) {
         size_t buf_len_copy = buf_len;
-        char *buf_copy = (char*)malloc(buf_len);
+        char *buf_copy = (char *) malloc(buf_len);
         memcpy(buf_copy, buf, buf_len);
 
         fuzz_buffer(buf_copy, &buf_len_copy, 3, 8, 5);
@@ -953,6 +956,18 @@ TEST(Msdoc, TestFuzz1) {
     cleanup(&doc, &f);
 }
 
+TEST(Wpd, Wpd51_1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/wpd/test51_1.wpd", &f, &doc);
+
+    parse_wpd(&wpd_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaContent)->str_val,
+                 "Hello, WordPerfect This is a test This is the next page This is another page");
+
+    cleanup(&doc, &f);
+}
 
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
@@ -1033,6 +1048,10 @@ int main(int argc, char **argv) {
     msdoc_text_ctx.store = counter_store;
     msdoc_text_ctx.content_size = 500;
     msdoc_text_ctx.tn_size = 0;
+
+    wpd_ctx.log = noop_log;
+    wpd_ctx.logf = noop_logf;
+    wpd_ctx.content_size = 500;
 
     av_log_set_level(AV_LOG_QUIET);
     ::testing::InitGoogleTest(&argc, argv);
