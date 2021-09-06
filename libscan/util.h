@@ -9,11 +9,11 @@
 
 #define STR_STARTS_WITH(x, y) (strncmp(y, x, sizeof(y) - 1) == 0)
 
-#define TEXT_BUF_FULL -1
-#define INITIAL_BUF_SIZE 1024 * 16
+#define TEXT_BUF_FULL (-1)
+#define INITIAL_BUF_SIZE (1024 * 16)
 
 #define SHOULD_IGNORE_CHAR(c) !(SHOULD_KEEP_CHAR(c))
-#define SHOULD_KEEP_CHAR(c) ((c >= '\'' && c <= ';') || (c >= 'A' && c <= 'z') || (c > 127))
+#define SHOULD_KEEP_CHAR(c) (((c) >= '\'' && (c) <= ';') || ((c) >= 'A' && (c) <= 'z') || ((c) > 127))
 
 
 typedef struct dyn_buffer {
