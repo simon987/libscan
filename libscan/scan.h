@@ -22,6 +22,7 @@ typedef void (*log_callback_t)(const char *filepath, int level, char *str);
 typedef int scan_code_t;
 #define SCAN_OK (scan_code_t) 0
 #define SCAN_ERR_READ (scan_code_t) (-1)
+#define SCAN_ERR_SKIP (scan_code_t) (-2)
 
 #define LEVEL_DEBUG 0
 #define LEVEL_INFO 1

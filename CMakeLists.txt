@@ -25,6 +25,7 @@ add_library(
         libscan/media/media.c libscan/media/media.h
         libscan/font/font.c libscan/font/font.h
         libscan/msdoc/msdoc.c libscan/msdoc/msdoc.h
+        libscan/json/json.c libscan/json/json.h
         libscan/wpd/wpd.c libscan/wpd/wpd.h libscan/wpd/libwpd_c_api.h libscan/wpd/libwpd_c_api.cpp
 
         third-party/utf8.h
@@ -33,6 +34,7 @@ set_target_properties(scan PROPERTIES LINKER_LANGUAGE C)
 
 set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib .so)
 
+find_package(cJSON CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
 find_package(BZip2 REQUIRED)
 find_package(lz4 REQUIRED)
@@ -149,6 +151,7 @@ target_link_libraries(
         scan
         PUBLIC
 
+        cjson
         ${LibArchive_LIBRARIES}
         ZLIB::ZLIB
         BZip2::BZip2

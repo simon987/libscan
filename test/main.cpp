@@ -12,6 +12,7 @@ extern "C" {
 #include "../libscan/raw/raw.h"
 #include "../libscan/msdoc/msdoc.h"
 #include "../libscan/wpd/wpd.h"
+#include "../libscan/json/json.h"
 #include <libavutil/avutil.h>
 }
 
@@ -41,6 +42,8 @@ static scan_msdoc_ctx_t msdoc_ctx;
 static scan_msdoc_ctx_t msdoc_text_ctx;
 
 static scan_wpd_ctx_t wpd_ctx;
+
+static scan_json_ctx_t json_ctx;
 
 
 document_t LastSubDoc;
@@ -969,6 +972,26 @@ TEST(Wpd, Wpd51_1) {
     cleanup(&doc, &f);
 }
 
+TEST(Json, Json1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/json/json1.json", &f, &doc);
+
+    parse_json(&json_ctx, &f, &doc);
+
+    cleanup(&doc, &f);
+}
+
+TEST(Json, NDJson1) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/json/ndjson1.jsonl", &f, &doc);
+
+    parse_ndjson(&json_ctx, &f, &doc);
+
+    cleanup(&doc, &f);
+}
+
 int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
 
@@ -1052,6 +1075,10 @@ int main(int argc, char **argv) {
     wpd_ctx.log = noop_log;
     wpd_ctx.logf = noop_logf;
     wpd_ctx.content_size = 500;
+
+    json_ctx.log = noop_log;
+    json_ctx.logf = noop_logf;
+    json_ctx.content_size = 5000;
 
     av_log_set_level(AV_LOG_QUIET);
     ::testing::InitGoogleTest(&argc, argv);
