@@ -6,7 +6,7 @@
 
 #include "../ebook/ebook.h"
 
-void parse_msdoc_text(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file_in, void* buf, size_t buf_len) {
+void parse_msdoc_text(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file_in, void *buf, size_t buf_len) {
 
     // Open word doc
     options_type *opts = direct_vGetOptions();
@@ -20,7 +20,7 @@ void parse_msdoc_text(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file_in, voi
     opts->iPageWidth = 595;
     opts->eImageLevel = level_ps_3;
 
-    int doc_word_version = iGuessVersionNumber(file_in, buf_len);
+    int doc_word_version = iGuessVersionNumber(file_in, (int) buf_len);
     if (doc_word_version < 0 || doc_word_version == 3) {
         free(buf);
         return;
@@ -38,19 +38,19 @@ void parse_msdoc_text(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file_in, voi
         return;
     }
 
-    iInitDocument(file_in, buf_len);
-    const char* author = szGetAuthor();
+    iInitDocument(file_in, (int) buf_len);
+    const char *author = szGetAuthor();
     if (author != NULL) {
         APPEND_UTF8_META(doc, MetaAuthor, author)
     }
 
-    const char* title = szGetTitle();
+    const char *title = szGetTitle();
     if (title != NULL) {
         APPEND_UTF8_META(doc, MetaTitle, title)
     }
     vFreeDocument();
 
-    bWordDecryptor(file_in, buf_len, diag);
+    bWordDecryptor(file_in, (int) buf_len, diag);
     vDestroyDiagram(diag);
     fclose(file_out);
 
@@ -71,7 +71,7 @@ void parse_msdoc_text(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file_in, voi
     free(out_buf);
 }
 
-void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void* buf, size_t buf_len) {
+void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void *buf, size_t buf_len) {
 
     scan_ebook_ctx_t ebook_ctx = {
             .content_size = ctx->content_size,
@@ -93,7 +93,7 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void* b
     opts->iPageWidth = 595;
     opts->eImageLevel = level_ps_3;
 
-    int doc_word_version = iGuessVersionNumber(file, buf_len);
+    int doc_word_version = iGuessVersionNumber(file, (int) buf_len);
     if (doc_word_version < 0 || doc_word_version == 3) {
         free(buf);
         return;
@@ -110,7 +110,7 @@ void parse_msdoc_pdf(scan_msdoc_ctx_t *ctx, document_t *doc, FILE *file, void* b
         return;
     }
 
-    bWordDecryptor(file, buf_len, diag);
+    bWordDecryptor(file, (int) buf_len, diag);
     vDestroyDiagram(diag);
 
     fclose(file_out);

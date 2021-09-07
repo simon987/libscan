@@ -35,7 +35,7 @@ scan_code_t parse_text(scan_text_ctx_t *ctx, vfile_t *f, document_t *doc) {
     return SCAN_OK;
 }
 
-#define MAX_MARKUP_SIZE 1024 * 1024
+#define MAX_MARKUP_SIZE (1024 * 1024)
 
 scan_code_t parse_markup(scan_text_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
