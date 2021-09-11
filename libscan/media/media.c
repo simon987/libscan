@@ -511,7 +511,7 @@ int memfile_read(void *ptr, uint8_t *buf, int buf_size) {
         return AVERROR_EOF;
     }
 
-    return buf_size;
+    return (int) ret;
 }
 
 long memfile_seek(void *ptr, long offset, int whence) {
@@ -540,11 +540,18 @@ int memfile_open(vfile_t *f, memfile_t *mem) {
     int ret = f->read(f, mem->buf, mem->info.st_size);
     mem->file = fmemopen(mem->buf, mem->info.st_size, "rb");
 
+    if (f->calculate_checksum) {
+        SHA1_Init(&f->sha1_ctx);
+        safe_sha1_update(&f->sha1_ctx, mem->buf, mem->info.st_size);
+        SHA1_Final(f->sha1_digest, &f->sha1_ctx);
+        f->has_checksum = TRUE;
+    }
+
     return (ret == mem->info.st_size && mem->file != NULL) ? 0 : -1;
 }
 
 int memfile_open_buf(void *buf, size_t buf_len, memfile_t *mem) {
-    mem->info.st_size = buf_len;
+    mem->info.st_size = (int) buf_len;
 
     mem->buf = buf;
     mem->file = fmemopen(mem->buf, mem->info.st_size, "rb");
@@ -619,7 +626,7 @@ void init_media() {
 }
 
 int store_image_thumbnail(scan_media_ctx_t *ctx, void *buf, size_t buf_len, document_t *doc, const char *url) {
-    memfile_t memfile;
+    memfile_t memfile = {{}, 0, 0};
     AVIOContext *io_ctx = NULL;
 
     AVFormatContext *pFormatCtx = avformat_alloc_context();
@@ -637,8 +644,6 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void *buf, size_t buf_len, docu
     } else {
         avformat_close_input(&pFormatCtx);
         avformat_free_context(pFormatCtx);
-        av_free(io_ctx->buffer);
-        avio_context_free(&io_ctx);
         fclose(memfile.file);
         return FALSE;
     }

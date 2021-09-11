@@ -67,10 +67,10 @@ scan_code_t parse_json(scan_json_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
 scan_code_t parse_ndjson(scan_json_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
-    char *buf = malloc(JSON_BUF_SIZE + 1);
+    char *buf = calloc(JSON_BUF_SIZE + 1, sizeof(char));
     *(buf + JSON_BUF_SIZE) = '\0';
 
-    text_buffer_t tex = text_buffer_create(-1);
+    text_buffer_t tex = text_buffer_create(ctx->content_size);
 
     size_t ret;
     int eof = FALSE;

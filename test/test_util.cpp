@@ -61,6 +61,8 @@ void load_file(const char *filepath, vfile_t *f) {
     f->read = fs_read;
     f->close = fs_close;
     f->is_fs_file = TRUE;
+    f->calculate_checksum = TRUE;
+    f->has_checksum = FALSE;
 }
 
 void load_mem(void *mem, size_t size, vfile_t *f) {

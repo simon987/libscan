@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <openssl/evp.h>
 
 
 int should_parse_filtered_file(const char *filepath, int ext) {
@@ -33,18 +34,29 @@ int should_parse_filtered_file(const char *filepath, int ext) {
     return FALSE;
 }
 
-int arc_read(struct vfile *f, void *buf, size_t size) {
-    size_t read = archive_read_data(f->arc, buf, size);
+void arc_close(struct vfile *f) {
+    SHA1_Final(f->sha1_digest, &f->sha1_ctx);
+}
 
-    if (read != size) {
-        const char* error_str = archive_error_string(f->arc);
+
+int arc_read(struct vfile *f, void *buf, size_t size) {
+    size_t bytes_read = archive_read_data(f->arc, buf, size);
+
+    if (bytes_read != 0 && bytes_read <= size && f->calculate_checksum) {
+        f->has_checksum = TRUE;
+
+        safe_sha1_update(&f->sha1_ctx, (unsigned char*)buf, bytes_read);
+    }
+
+    if (bytes_read != size) {
+        const char *error_str = archive_error_string(f->arc);
         if (error_str != NULL) {
             f->logf(f->filepath, LEVEL_ERROR, "Error reading archive file: %s", error_str);
         }
         return -1;
     }
 
-    return read;
+    return (int) bytes_read;
 }
 
 int arc_open(scan_arc_ctx_t *ctx, vfile_t *f, struct archive **a, arc_data_t *arc_data, int allow_recurse) {
@@ -58,7 +70,7 @@ int arc_open(scan_arc_ctx_t *ctx, vfile_t *f, struct archive **a, arc_data_t *ar
             archive_read_add_passphrase(*a, ctx->passphrase);
         }
 
-       return archive_read_open_filename(*a, f->filepath, ARC_BUF_SIZE);
+        return archive_read_open_filename(*a, f->filepath, ARC_BUF_SIZE);
     } else if (allow_recurse) {
         *a = archive_read_new();
         archive_read_support_filter_all(*a);
@@ -102,8 +114,8 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             if (S_ISREG(archive_entry_stat(entry)->st_mode)) {
-                const char* utf8_name = archive_entry_pathname_utf8(entry);
-                const char* file_path = utf8_name == NULL ? archive_entry_pathname(entry) : utf8_name;
+                const char *utf8_name = archive_entry_pathname_utf8(entry);
+                const char *file_path = utf8_name == NULL ? archive_entry_pathname(entry) : utf8_name;
 
                 dyn_buffer_append_string(&buf, file_path);
                 dyn_buffer_write_char(&buf, ' ');
@@ -121,7 +133,7 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
         parse_job_t *sub_job = malloc(sizeof(parse_job_t) + PATH_MAX * 2);
 
-        sub_job->vfile.close = NULL;
+        sub_job->vfile.close = arc_close;
         sub_job->vfile.read = arc_read;
         sub_job->vfile.reset = NULL;
         sub_job->vfile.arc = a;
@@ -129,13 +141,15 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
         sub_job->vfile.is_fs_file = FALSE;
         sub_job->vfile.log = ctx->log;
         sub_job->vfile.logf = ctx->logf;
+        sub_job->vfile.has_checksum = FALSE;
+        sub_job->vfile.calculate_checksum = f->calculate_checksum;
         memcpy(sub_job->parent, doc->path_md5, MD5_DIGEST_LENGTH);
 
         while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
             sub_job->vfile.info = *archive_entry_stat(entry);
             if (S_ISREG(sub_job->vfile.info.st_mode)) {
 
-                const char* utf8_name = archive_entry_pathname_utf8(entry);
+                const char *utf8_name = archive_entry_pathname_utf8(entry);
 
                 if (utf8_name == NULL) {
                     sprintf(sub_job->filepath, "%s#/%s", f->filepath, archive_entry_pathname(entry));
@@ -150,6 +164,9 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
                 } else {
                     sub_job->ext = (int) strlen(sub_job->filepath);
                 }
+
+                memset(&sub_job->vfile.sha1_ctx, 0, sizeof(sub_job->vfile.sha1_ctx));
+                SHA1_Init(&sub_job->vfile.sha1_ctx);
 
                 ctx->parse(sub_job);
             }

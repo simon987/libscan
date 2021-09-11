@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <openssl/md5.h>
+#include <openssl/sha.h>
 
 #include "macros.h"
 
@@ -69,6 +70,7 @@ enum metakey {
     MetaAuthor,
     MetaModifiedBy,
     MetaThumbnail,
+    MetaChecksum,
 
     // Number
     MetaWidth,
@@ -130,8 +132,13 @@ typedef struct vfile {
     };
 
     int is_fs_file;
+    int has_checksum;
+    int calculate_checksum;
     const char *filepath;
     struct stat info;
+
+    SHA_CTX sha1_ctx;
+    unsigned char sha1_digest[SHA1_DIGEST_LENGTH];
 
     read_func_t read;
     seek_func_t seek;

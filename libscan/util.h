@@ -13,7 +13,10 @@
 #define INITIAL_BUF_SIZE (1024 * 16)
 
 #define SHOULD_IGNORE_CHAR(c) !(SHOULD_KEEP_CHAR(c))
-#define SHOULD_KEEP_CHAR(c) (((c) >= '\'' && (c) <= ';') || ((c) >= 'A' && (c) <= 'z') || ((c) > 127))
+#define SHOULD_KEEP_CHAR(c) (\
+    ((c) >= '\'' && (c) <= ';') || \
+    ((c) >= 'A' && (c) <= 'z') || \
+    ((c) > 127 && (c) != 0x00A0 && (c) && (c) != 0xFFFD))
 
 
 typedef struct dyn_buffer {
@@ -331,6 +334,28 @@ static void *read_all(vfile_t *f, size_t *size) {
     }
 
     return buf;
+}
+
+#define STACK_BUFFER_SIZE (size_t)(4096 * 8)
+
+__always_inline
+static void safe_sha1_update(SHA_CTX *ctx, void *buf, size_t size) {
+    unsigned char stack_buf[STACK_BUFFER_SIZE];
+
+    void *sha1_buf;
+    if (size <= STACK_BUFFER_SIZE) {
+        sha1_buf = stack_buf;
+    } else {
+        void *heap_sha1_buf = malloc(size);
+        sha1_buf = heap_sha1_buf;
+    }
+
+    memcpy(sha1_buf, buf, size);
+    SHA1_Update(ctx, (const void *) sha1_buf, size);
+
+    if (sha1_buf != stack_buf) {
+        free(sha1_buf);
+    }
 }
 
 #endif

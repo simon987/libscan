@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include "../scan.h"
 
-# define ARC_SKIPPED -1
+# define ARC_SKIPPED (-1)
 #define ARC_MODE_SKIP 0
 #define ARC_MODE_LIST 1
 #define ARC_MODE_SHALLOW 2
@@ -31,27 +31,34 @@ typedef struct {
 } arc_data_t;
 
 static int vfile_open_callback(struct archive *a, void *user_data) {
-    arc_data_t *data = (arc_data_t*)user_data;
+    arc_data_t *data = (arc_data_t *) user_data;
 
-    if (data->f->is_fs_file && data->f->fd == -1) {
-        data->f->fd = open(data->f->filepath, O_RDONLY);
+    if (!data->f->is_fs_file) {
+        SHA1_Init(&data->f->sha1_ctx);
     }
 
     return ARCHIVE_OK;
 }
 
 static long vfile_read_callback(struct archive *a, void *user_data, const void **buf) {
-    arc_data_t *data = (arc_data_t*)user_data;
+    arc_data_t *data = (arc_data_t *) user_data;
 
     *buf = data->buf;
-    return data->f->read(data->f, data->buf, ARC_BUF_SIZE);
+    long ret = data->f->read(data->f, data->buf, sizeof(data->buf));
+
+    if (!data->f->is_fs_file && ret > 0) {
+        data->f->has_checksum = TRUE;
+        safe_sha1_update(&data->f->sha1_ctx, (unsigned char*)data->buf, ret);
+    }
+
+    return ret;
 }
 
 static int vfile_close_callback(struct archive *a, void *user_data) {
-    arc_data_t *data = (arc_data_t*)user_data;
+    arc_data_t *data = (arc_data_t *) user_data;
 
-    if (data->f->close != NULL) {
-        data->f->close(data->f);
+    if (!data->f->is_fs_file) {
+        SHA1_Final((unsigned char *) data->f->sha1_digest, &data->f->sha1_ctx);
     }
 
     return ARCHIVE_OK;
@@ -63,6 +70,8 @@ int should_parse_filtered_file(const char *filepath, int ext);
 
 scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc);
 
-int arc_read(struct vfile * f, void *buf, size_t size);
+int arc_read(struct vfile *f, void *buf, size_t size);
+
+void arc_close(struct vfile *f);
 
 #endif

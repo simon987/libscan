@@ -46,7 +46,7 @@ static scan_wpd_ctx_t wpd_ctx;
 static scan_json_ctx_t json_ctx;
 
 
-document_t LastSubDoc;
+static document_t LastSubDoc;
 
 void _parse_media(parse_job_t *job) {
     parse_media(&media_ctx, &job->vfile, &LastSubDoc);
@@ -222,6 +222,24 @@ TEST(Ebook, Utf8Pdf) {
     parse_ebook(&ebook_500_ctx, &f, "application/pdf", &doc);
 
     ASSERT_TRUE(STR_STARTS_WITH(get_meta(&doc, MetaContent)->str_val, "最後測試 "));
+    cleanup(&doc, &f);
+}
+
+TEST(Ebook, Utf8PdfInvalidChars) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ebook/invalid_chars.pdf", &f, &doc);
+
+    ebook_ctx.tesseract_lang = nullptr;
+
+    parse_ebook(&ebook_ctx, &f, "application/pdf", &doc);
+
+    ebook_ctx.tesseract_lang = "eng";
+
+    // It should say "HART is a group of highly qualified ..." but the PDF
+    //  text is been intentionally fucked with by the authors
+    // We can at least filter out the non-printable/invalid characters like '�' etc
+    ASSERT_TRUE(STR_STARTS_WITH(get_meta(&doc, MetaContent)->str_val, "HART i a g f highl alified "));
     cleanup(&doc, &f);
 }
 
@@ -414,6 +432,20 @@ TEST(MediaImage, Mem1) {
     parse_archive(&arc_recurse_media_ctx, &f, &doc);
 
     ASSERT_NE(size_before, store_size);
+
+    cleanup(&doc, &f);
+}
+
+TEST(MediaImage, AsIsFs) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/media/9555.jpg", &f, &doc);
+
+    size_t size_before = store_size;
+
+    parse_media(&media_ctx, &f, &doc);
+
+    ASSERT_EQ(size_before + 14098, store_size);
 
     cleanup(&doc, &f);
 }
