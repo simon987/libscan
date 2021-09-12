@@ -7,6 +7,22 @@
 
 #define STORE_AS_IS ((void*)-1)
 
+const char *get_filepath_with_ext(document_t *doc, const char *filepath, const char *mime_str) {
+
+    int has_extension = doc->ext > doc->base;
+
+    if (!has_extension) {
+        if (strcmp(mime_str, "image/png") == 0) {
+            return "file.png";
+        } else if (strcmp(mime_str, "image/jpeg") == 0) {
+            return "file.jpg";
+        }
+    }
+
+    return filepath;
+}
+
+
 __always_inline
 void *scale_frame(const AVCodecContext *decoder, const AVFrame *frame, int size) {
 
@@ -497,7 +513,7 @@ int vfile_read(void *ptr, uint8_t *buf, int buf_size) {
 }
 
 typedef struct {
-    struct stat info;
+    size_t size;
     FILE *file;
     void *buf;
 } memfile_t;
@@ -518,7 +534,7 @@ long memfile_seek(void *ptr, long offset, int whence) {
     memfile_t *mem = ptr;
 
     if (whence == 0x10000) {
-        return mem->info.st_size;
+        return mem->size;
     }
 
     int ret = fseek(mem->file, offset, whence);
@@ -530,31 +546,31 @@ long memfile_seek(void *ptr, long offset, int whence) {
 }
 
 int memfile_open(vfile_t *f, memfile_t *mem) {
-    mem->info = f->info;
+    mem->size = f->info.st_size;
 
-    mem->buf = malloc(mem->info.st_size);
+    mem->buf = malloc(mem->size);
     if (mem->buf == NULL) {
         return -1;
     }
 
-    int ret = f->read(f, mem->buf, mem->info.st_size);
-    mem->file = fmemopen(mem->buf, mem->info.st_size, "rb");
+    int ret = f->read(f, mem->buf, mem->size);
+    mem->file = fmemopen(mem->buf, mem->size, "rb");
 
     if (f->calculate_checksum) {
         SHA1_Init(&f->sha1_ctx);
-        safe_sha1_update(&f->sha1_ctx, mem->buf, mem->info.st_size);
+        safe_sha1_update(&f->sha1_ctx, mem->buf, mem->size);
         SHA1_Final(f->sha1_digest, &f->sha1_ctx);
         f->has_checksum = TRUE;
     }
 
-    return (ret == mem->info.st_size && mem->file != NULL) ? 0 : -1;
+    return (ret == mem->size && mem->file != NULL) ? 0 : -1;
 }
 
 int memfile_open_buf(void *buf, size_t buf_len, memfile_t *mem) {
-    mem->info.st_size = (int) buf_len;
+    mem->size = (int) buf_len;
 
     mem->buf = buf;
-    mem->file = fmemopen(mem->buf, mem->info.st_size, "rb");
+    mem->file = fmemopen(mem->buf, mem->size, "rb");
 
     return mem->file != NULL ? 0 : -1;
 }
@@ -566,7 +582,7 @@ void memfile_close(memfile_t *mem) {
     }
 }
 
-void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) {
+void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc, const char *mime_str) {
 
     AVFormatContext *pFormatCtx = avformat_alloc_context();
     if (pFormatCtx == NULL) {
@@ -576,7 +592,9 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
 
     unsigned char *buffer = (unsigned char *) av_malloc(AVIO_BUF_SIZE);
     AVIOContext *io_ctx = NULL;
-    memfile_t memfile = {{}, 0, 0};
+    memfile_t memfile = {0, 0, 0};
+
+    const char *filepath = get_filepath_with_ext(doc, f->filepath, mime_str);
 
     if (f->info.st_size <= ctx->max_media_buffer) {
         int ret = memfile_open(f, &memfile);
@@ -593,7 +611,7 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
 
     pFormatCtx->pb = io_ctx;
 
-    int res = avformat_open_input(&pFormatCtx, f->filepath, NULL, NULL);
+    int res = avformat_open_input(&pFormatCtx, filepath, NULL, NULL);
     if (res < 0) {
         if (res != -5) {
             CTX_LOG_ERRORF(doc->filepath, "(media.c) avformat_open_input() returned [%d] %s", res, av_err2str(res))
@@ -612,12 +630,12 @@ void parse_media_vfile(scan_media_ctx_t *ctx, struct vfile *f, document_t *doc) 
     memfile_close(&memfile);
 }
 
-void parse_media(scan_media_ctx_t *ctx, vfile_t *f, document_t *doc) {
+void parse_media(scan_media_ctx_t *ctx, vfile_t *f, document_t *doc, const char *mime_str) {
 
     if (f->is_fs_file) {
         parse_media_filename(ctx, f->filepath, doc);
     } else {
-        parse_media_vfile(ctx, f, doc);
+        parse_media_vfile(ctx, f, doc, mime_str);
     }
 }
 
@@ -626,7 +644,7 @@ void init_media() {
 }
 
 int store_image_thumbnail(scan_media_ctx_t *ctx, void *buf, size_t buf_len, document_t *doc, const char *url) {
-    memfile_t memfile = {{}, 0, 0};
+    memfile_t memfile = {0, 0, 0};
     AVIOContext *io_ctx = NULL;
 
     AVFormatContext *pFormatCtx = avformat_alloc_context();
@@ -663,7 +681,7 @@ int store_image_thumbnail(scan_media_ctx_t *ctx, void *buf, size_t buf_len, docu
     AVStream *stream = pFormatCtx->streams[0];
 
     // Decoder
-    AVCodec *video_codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    const AVCodec *video_codec = avcodec_find_decoder(stream->codecpar->codec_id);
     AVCodecContext *decoder = avcodec_alloc_context3(video_codec);
     avcodec_parameters_to_context(decoder, stream->codecpar);
     avcodec_open2(decoder, video_codec, NULL);

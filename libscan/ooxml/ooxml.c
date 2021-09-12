@@ -41,8 +41,6 @@ int extract_text(scan_ooxml_ctx_t *ctx, xmlDoc *xml, xmlNode *node, text_buffer_
         if (err->level == XML_ERR_FATAL) {
             CTX_LOG_ERRORF("ooxml.c", "Got fatal XML error while parsing document: %s", err->message)
             return -1;
-        } else {
-            CTX_LOG_ERRORF("ooxml.c", "Got recoverable XML error while parsing document: %s", err->message)
         }
     }
 

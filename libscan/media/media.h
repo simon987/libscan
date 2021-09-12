@@ -43,7 +43,7 @@ static AVCodecContext *alloc_jpeg_encoder(int w, int h, float qscale) {
 }
 
 
-void parse_media(scan_media_ctx_t *ctx, vfile_t *f, document_t *doc);
+void parse_media(scan_media_ctx_t *ctx, vfile_t *f, document_t *doc, const char*mime_str);
 
 void init_media();
 

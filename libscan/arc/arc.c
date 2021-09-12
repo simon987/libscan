@@ -36,25 +36,77 @@ int should_parse_filtered_file(const char *filepath, int ext) {
 
 void arc_close(struct vfile *f) {
     SHA1_Final(f->sha1_digest, &f->sha1_ctx);
+
+    if (f->rewind_buffer != NULL) {
+        free(f->rewind_buffer);
+        f->rewind_buffer = NULL;
+        f->rewind_buffer_size = 0;
+        f->rewind_buffer_cursor = 0;
+    }
 }
 
 
 int arc_read(struct vfile *f, void *buf, size_t size) {
+
+    int bytes_copied = 0;
+
+    if (f->rewind_buffer_size != 0) {
+        if (size > f->rewind_buffer_size) {
+            memcpy(buf, f->rewind_buffer + f->rewind_buffer_cursor, f->rewind_buffer_size);
+
+            bytes_copied = f->rewind_buffer_size;
+            size -= f->rewind_buffer_size;
+            buf += f->rewind_buffer_size;
+            f->rewind_buffer_size = 0;
+        } else {
+            memcpy(buf, f->rewind_buffer + f->rewind_buffer_cursor, size);
+            f->rewind_buffer_size -= (int) size;
+            f->rewind_buffer_cursor += (int) size;
+
+            return (int) size;
+        }
+    }
+
     size_t bytes_read = archive_read_data(f->arc, buf, size);
 
     if (bytes_read != 0 && bytes_read <= size && f->calculate_checksum) {
         f->has_checksum = TRUE;
 
-        safe_sha1_update(&f->sha1_ctx, (unsigned char*)buf, bytes_read);
+        safe_sha1_update(&f->sha1_ctx, (unsigned char *) buf, bytes_read);
     }
 
-    if (bytes_read != size) {
+    if (bytes_read != size && archive_errno(f->arc) != 0) {
         const char *error_str = archive_error_string(f->arc);
         if (error_str != NULL) {
             f->logf(f->filepath, LEVEL_ERROR, "Error reading archive file: %s", error_str);
         }
         return -1;
     }
+
+    return (int) bytes_read + bytes_copied;
+}
+
+int arc_read_rewindable(struct vfile *f, void *buf, size_t size) {
+
+    if (f->rewind_buffer != NULL) {
+        fprintf(stderr, "Allocated rewind buffer more than once for %s", f->filepath);
+        exit(-1);
+    }
+
+    size_t bytes_read = archive_read_data(f->arc, buf, size);
+
+    if (bytes_read != size && archive_errno(f->arc) != 0) {
+        const char *error_str = archive_error_string(f->arc);
+        if (error_str != NULL) {
+            f->logf(f->filepath, LEVEL_ERROR, "Error reading archive file: %s", error_str);
+        }
+        return -1;
+    }
+
+    f->rewind_buffer = malloc(size);
+    f->rewind_buffer_size = (int) size;
+    f->rewind_buffer_cursor = 0;
+    memcpy(f->rewind_buffer, buf, size);
 
     return (int) bytes_read;
 }
@@ -135,10 +187,13 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
 
         sub_job->vfile.close = arc_close;
         sub_job->vfile.read = arc_read;
+        sub_job->vfile.read_rewindable = arc_read_rewindable;
         sub_job->vfile.reset = NULL;
         sub_job->vfile.arc = a;
         sub_job->vfile.filepath = sub_job->filepath;
         sub_job->vfile.is_fs_file = FALSE;
+        sub_job->vfile.rewind_buffer_size = 0;
+        sub_job->vfile.rewind_buffer = NULL;
         sub_job->vfile.log = ctx->log;
         sub_job->vfile.logf = ctx->logf;
         sub_job->vfile.has_checksum = FALSE;

@@ -18,6 +18,7 @@ extern "C" {
 
 static scan_arc_ctx_t arc_recurse_media_ctx;
 static scan_arc_ctx_t arc_list_ctx;
+static scan_arc_ctx_t arc_recurse_ooxml_ctx;
 
 static scan_text_ctx_t text_500_ctx;
 
@@ -50,6 +51,10 @@ static document_t LastSubDoc;
 
 void _parse_media(parse_job_t *job) {
     parse_media(&media_ctx, &job->vfile, &LastSubDoc);
+}
+
+void _parse_ooxml(parse_job_t *job) {
+    parse_ooxml(&ooxml_500_ctx, &job->vfile, &LastSubDoc);
 }
 
 
@@ -631,6 +636,42 @@ TEST(Ooxml, Docx1) {
     cleanup(&doc, &f);
 }
 
+TEST(Ooxml, Docx2) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ooxml/docx2.docx", &f, &doc);
+
+    ooxml_500_ctx.content_size = 999999;
+    parse_ooxml(&ooxml_500_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&doc, MetaAuthor)->str_val, "liz evans");
+    ASSERT_EQ(get_meta(&doc, MetaPages)->long_val, 1);
+    ASSERT_EQ(strlen(get_meta(&doc, MetaContent)->str_val), 2780);
+
+    ooxml_500_ctx.content_size = 500;
+
+    cleanup(&doc, &f);
+}
+
+TEST(Ooxml, Docx2Archive) {
+    vfile_t f;
+    document_t doc;
+    load_doc_file("libscan-test-files/test_files/ooxml/docx2.docx.7z", &f, &doc);
+
+    ooxml_500_ctx.content_size = 999999;
+    parse_archive(&arc_recurse_ooxml_ctx, &f, &doc);
+
+    ASSERT_STREQ(get_meta(&LastSubDoc, MetaAuthor)->str_val, "liz evans");
+    ASSERT_EQ(get_meta(&LastSubDoc, MetaPages)->long_val, 1);
+    ASSERT_EQ(strlen(get_meta(&LastSubDoc, MetaContent)->str_val), 2780);
+
+    fprintf(stderr, "%s\n", get_meta(&LastSubDoc, MetaContent)->str_val);
+
+    ooxml_500_ctx.content_size = 500;
+
+    cleanup(&doc, &f);
+}
+
 TEST(Ooxml, Docx2Thumbnail) {
     vfile_t f;
     document_t doc;
@@ -1032,6 +1073,12 @@ int main(int argc, char **argv) {
     arc_recurse_media_ctx.store = counter_store;
     arc_recurse_media_ctx.mode = ARC_MODE_RECURSE;
     arc_recurse_media_ctx.parse = _parse_media;
+
+    arc_recurse_ooxml_ctx.log = noop_log;
+    arc_recurse_ooxml_ctx.logf = noop_logf;
+    arc_recurse_ooxml_ctx.store = counter_store;
+    arc_recurse_ooxml_ctx.mode = ARC_MODE_RECURSE;
+    arc_recurse_ooxml_ctx.parse = _parse_ooxml;
 
     arc_list_ctx.log = noop_log;
     arc_list_ctx.logf = noop_logf;

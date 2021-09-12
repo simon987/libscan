@@ -16,7 +16,7 @@ int fs_read(struct vfile *f, void *buf, size_t size) {
         }
     }
 
-    return read(f->fd, buf, size);
+    return (int) read(f->fd, buf, size);
 }
 
 //Note: No out of bounds check
@@ -68,7 +68,7 @@ void load_file(const char *filepath, vfile_t *f) {
 void load_mem(void *mem, size_t size, vfile_t *f) {
     f->filepath = "_mem_";
     f->_test_data = mem;
-    f->info.st_size = size;
+    f->info.st_size = (int) size;
     f->read = mem_read;
     f->close = nullptr;
     f->is_fs_file = TRUE;
@@ -108,7 +108,7 @@ void fuzz_buffer(char *buf, size_t *buf_len, int width, int n, int trunc_p) {
         }
 
         for (int disp = 0; disp < width; disp++) {
-            buf[offset + disp] = (int8_t)rand();
+            buf[offset + disp] = (int8_t) rand();
         }
     }
 }

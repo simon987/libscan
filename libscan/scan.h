@@ -17,7 +17,9 @@
 #define UNUSED(x) __attribute__((__unused__))  x
 
 typedef void (*store_callback_t)(char *key, size_t key_len, char *buf, size_t buf_len);
+
 typedef void (*logf_callback_t)(const char *filepath, int level, char *format, ...);
+
 typedef void (*log_callback_t)(const char *filepath, int level, char *str);
 
 typedef int scan_code_t;
@@ -140,8 +142,12 @@ typedef struct vfile {
     SHA_CTX sha1_ctx;
     unsigned char sha1_digest[SHA1_DIGEST_LENGTH];
 
+    void *rewind_buffer;
+    int rewind_buffer_size;
+    int rewind_buffer_cursor;
+
     read_func_t read;
-    seek_func_t seek;
+    read_func_t read_rewindable;
     close_func_t close;
     reset_func_t reset;
     log_callback_t log;
