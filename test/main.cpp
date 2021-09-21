@@ -48,9 +48,10 @@ static scan_json_ctx_t json_ctx;
 
 
 static document_t LastSubDoc;
+static char *RecurseMediaMime = (char *) "";
 
 void _parse_media(parse_job_t *job) {
-    parse_media(&media_ctx, &job->vfile, &LastSubDoc);
+    parse_media(&media_ctx, &job->vfile, &LastSubDoc, RecurseMediaMime);
 }
 
 void _parse_ooxml(parse_job_t *job) {
@@ -389,7 +390,7 @@ TEST(MediaImage, ExifGps1) {
     document_t doc;
     load_doc_file("libscan-test-files/test_files/media/exif_GPS.jpg", &f, &doc);
 
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "image/jpeg");
 
     ASSERT_STREQ(get_meta(&doc, MetaExifGpsLatitudeRef)->str_val, "N");
     ASSERT_STREQ(get_meta(&doc, MetaExifGpsLatitudeDMS)->str_val, "48:1 , 56585399:1000000, 0:1");
@@ -405,7 +406,7 @@ TEST(MediaImage, Exif1) {
     document_t doc;
     load_doc_file("libscan-test-files/test_files/media/exiftest1.jpg", &f, &doc);
 
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "image/jpeg");
 
     ASSERT_STREQ(get_meta(&doc, MetaContent)->str_val, "I don't know if it's a thing mostly done for high end "
                                                        "hotels or what, but I've seen it in a few places in Thailand: "
@@ -434,7 +435,8 @@ TEST(MediaImage, Mem1) {
 
     size_t size_before = store_size;
 
-    parse_archive(&arc_recurse_media_ctx, &f, &doc);
+    RecurseMediaMime = (char *) "image/jpeg";
+    parse_archive(&arc_recurse_media_ctx, &f, &doc, nullptr, nullptr);
 
     ASSERT_NE(size_before, store_size);
 
@@ -448,7 +450,7 @@ TEST(MediaImage, AsIsFs) {
 
     size_t size_before = store_size;
 
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "image/jpeg");
 
     ASSERT_EQ(size_before + 14098, store_size);
 
@@ -462,7 +464,8 @@ TEST(MediaImage, Mem2AsIs) {
 
     size_t size_before = store_size;
 
-    parse_archive(&arc_recurse_media_ctx, &f, &doc);
+    RecurseMediaMime = (char *) "image/jpeg";
+    parse_archive(&arc_recurse_media_ctx, &f, &doc, nullptr, nullptr);
 
     ASSERT_EQ(size_before + 14098, store_size);
 
@@ -475,7 +478,7 @@ TEST(MediaVideo, VidMkvSubDisabled) {
     load_doc_file("libscan-test-files/test_files/media/berd.mkv", &f, &doc);
 
     size_t size_before = store_size;
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "video/x-matroska");
 
     ASSERT_NE(size_before, store_size);
     ASSERT_EQ(get_meta(&doc, MetaContent), nullptr);
@@ -490,7 +493,7 @@ TEST(MediaVideo, VidMkvSubEnabled) {
 
     size_t size_before = store_size;
     media_ctx.read_subtitles = TRUE;
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "video/x-matroska");
     media_ctx.read_subtitles = FALSE;
 
     ASSERT_NE(size_before, store_size);
@@ -504,7 +507,7 @@ TEST(MediaVideo, Vid3Mp4) {
     document_t doc;
     load_doc_file("libscan-test-files/test_files/media/vid3.mp4", &f, &doc);
 
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "video/mp4");
 
     ASSERT_STREQ(get_meta(&doc, MetaTitle)->str_val, "Helicopter (((Accident))) - "
                                                      "https://archive.org/details/Virginia_Helicopter_Crash");
@@ -521,7 +524,7 @@ TEST(MediaVideo, Vid3Ogv) {
     document_t doc;
     load_doc_file("libscan-test-files/test_files/media/vid3.ogv", &f, &doc);
 
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "application/ogg");
 
     ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "theora");
     ASSERT_EQ(get_meta(&doc, MetaMediaBitrate)->long_val, 590261);
@@ -536,7 +539,7 @@ TEST(MediaVideo, Vid3Webm) {
     document_t doc;
     load_doc_file("libscan-test-files/test_files/media/vid3.webm", &f, &doc);
 
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "video/webm");
 
     ASSERT_STREQ(get_meta(&doc, MetaMediaVideoCodec)->str_val, "vp8");
     ASSERT_EQ(get_meta(&doc, MetaMediaBitrate)->long_val, 343153);
@@ -553,7 +556,8 @@ TEST(MediaVideoVfile, Vid3Ogv) {
 
     size_t size_before = store_size;
 
-    parse_archive(&arc_recurse_media_ctx, &f, &doc);
+    RecurseMediaMime = (char *) "video/webm";
+    parse_archive(&arc_recurse_media_ctx, &f, &doc, nullptr, nullptr);
 
 //    ASSERT_STREQ(get_meta(&LastSubDoc, MetaMediaVideoCodec)->str_val, "theora");
     ASSERT_EQ(get_meta(&LastSubDoc, MetaMediaBitrate)->long_val, 590261);
@@ -568,7 +572,7 @@ TEST(MediaVideo, VidDuplicateTags) {
     document_t doc;
     load_doc_file("libscan-test-files/test_files/media/vid_tags.mkv", &f, &doc);
 
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "video/x-matroska");
 
     meta_line_t *meta_content = get_meta(&doc, MetaContent);
     ASSERT_STREQ(meta_content->str_val, "he's got a point");
@@ -592,7 +596,7 @@ TEST(MediaAudio, MusicMp3) {
     document_t doc;
     load_doc_file("libscan-test-files/test_files/media/02-The Watchmaker-Barry James_spoken.mp3", &f, &doc);
 
-    parse_media(&media_ctx, &f, &doc);
+    parse_media(&media_ctx, &f, &doc, "audio/x-mpeg-3");
 
     ASSERT_STREQ(get_meta(&doc, MetaArtist)->str_val, "Barry James");
     ASSERT_STREQ(get_meta(&doc, MetaAlbum)->str_val, "Strange Slumber, Music for Wonderful Dreams");
@@ -659,7 +663,7 @@ TEST(Ooxml, Docx2Archive) {
     load_doc_file("libscan-test-files/test_files/ooxml/docx2.docx.7z", &f, &doc);
 
     ooxml_500_ctx.content_size = 999999;
-    parse_archive(&arc_recurse_ooxml_ctx, &f, &doc);
+    parse_archive(&arc_recurse_ooxml_ctx, &f, &doc, nullptr, nullptr);
 
     ASSERT_STREQ(get_meta(&LastSubDoc, MetaAuthor)->str_val, "liz evans");
     ASSERT_EQ(get_meta(&LastSubDoc, MetaPages)->long_val, 1);
@@ -751,7 +755,7 @@ TEST(Arc, Utf8) {
     document_t doc;
     load_doc_file("libscan-test-files/test_files/arc/test1.zip", &f, &doc);
 
-    parse_archive(&arc_list_ctx, &f, &doc);
+    parse_archive(&arc_list_ctx, &f, &doc, nullptr, nullptr);
 
     ASSERT_TRUE(strstr(get_meta(&doc, MetaContent)->str_val, "arctest/ȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬȬ.txt") != nullptr);
 
@@ -766,7 +770,7 @@ TEST(Arc, EncryptedZip) {
     size_t size_before = store_size;
 
     strcpy(arc_recurse_media_ctx.passphrase, "sist2");
-    parse_archive(&arc_recurse_media_ctx, &f, &doc);
+    parse_archive(&arc_recurse_media_ctx, &f, &doc, nullptr, nullptr);
 
     arc_recurse_media_ctx.passphrase[0] = '\0';
 

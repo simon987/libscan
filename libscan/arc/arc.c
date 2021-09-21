@@ -5,6 +5,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <openssl/evp.h>
+#include <pcre.h>
 
 
 int should_parse_filtered_file(const char *filepath, int ext) {

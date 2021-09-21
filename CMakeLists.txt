@@ -46,6 +46,8 @@ find_package(JPEG REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(LibLZMA REQUIRED)
 find_package(ZLIB REQUIRED)
+find_package(unofficial-pcre CONFIG REQUIRED)
+
 
 find_library(JBIG2DEC_LIB NAMES jbig2decd jbig2dec)
 find_library(HARFBUZZ_LIB NAMES harfbuzz harfbuzzd)
@@ -200,6 +202,7 @@ target_link_libraries(
         ${GUMBO_LIB}
         dl
         antiword
+        unofficial::pcre::pcre unofficial::pcre::pcre16 unofficial::pcre::pcre32 unofficial::pcre::pcrecpp
 )
 
 target_include_directories(
