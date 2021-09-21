@@ -142,7 +142,10 @@ int arc_open(scan_arc_ctx_t *ctx, vfile_t *f, struct archive **a, arc_data_t *ar
     }
 }
 
-scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
+static __thread int sub_strings[30];
+#define EXCLUDED(str) (pcre_exec(exclude, exclude_extra, str, strlen(str), 0, 0, sub_strings, sizeof(sub_strings)) >= 0)
+
+scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc, pcre *exclude, pcre_extra *exclude_extra) {
 
     struct archive *a = NULL;
     struct archive_entry *entry = NULL;
@@ -213,14 +216,19 @@ scan_code_t parse_archive(scan_arc_ctx_t *ctx, vfile_t *f, document_t *doc) {
                 }
                 sub_job->base = (int) (strrchr(sub_job->filepath, '/') - sub_job->filepath) + 1;
 
+                // Handle excludes
+                if (exclude != NULL && EXCLUDED(sub_job->filepath)) {
+                    CTX_LOG_DEBUGF("arc.c", "Excluded: %s", sub_job->filepath)
+                    continue;
+                }
+
                 char *p = strrchr(sub_job->filepath, '.');
-                if (p != NULL) {
+                if (p != NULL && (p - sub_job->filepath) > strlen(f->filepath)) {
                     sub_job->ext = (int) (p - sub_job->filepath + 1);
                 } else {
                     sub_job->ext = (int) strlen(sub_job->filepath);
                 }
 
-                memset(&sub_job->vfile.sha1_ctx, 0, sizeof(sub_job->vfile.sha1_ctx));
                 SHA1_Init(&sub_job->vfile.sha1_ctx);
 
                 ctx->parse(sub_job);
